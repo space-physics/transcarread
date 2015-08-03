@@ -27,10 +27,7 @@ from numpy import fromfile, float32, arange, asarray
 from datetime import datetime
 from scipy.interpolate import interp1d
 #
-try:
-    from .gridaurora.ztanh import setupz
-except Exception:
-    from gridaurora.ztanh import setupz
+from gridaurora.ztanh import setupz
 
 d_bytes = 4
 #ncol0 = 50 #from transconvec_13.op.f

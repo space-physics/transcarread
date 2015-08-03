@@ -4,7 +4,7 @@ from numpy import fromfile,float32, empty
 from pandas import DataFrame, Panel
 from os.path import getsize,expanduser, split, join
 #
-from readionoinit import compplasmaparam, parseionoheader, readionoheader
+from .readionoinit import compplasmaparam, parseionoheader, readionoheader
 #from dateutil.relativedelta import relativedelta
 #from pytz import UTC
 """
