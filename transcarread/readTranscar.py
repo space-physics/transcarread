@@ -5,13 +5,9 @@ from numpy import s_
 
 from warnings import warn
 #
-try:
-    from .readExcrates import ExcitationRates
-    from .parseTranscar import readTranscarInput
-except Exception:
-    from readExcrates import ExcitationRates
-    from parseTranscar import readTranscarInput
-from pybashutils.findnearest import find_nearest
+from .readExcrates import ExcitationRates
+from .parseTranscar import readTranscarInput
+from histutils.findnearest import find_nearest
 #
 '''
 getTranscar is the function called by "hist-feasibility" to get Transcar modeled VER/flux
@@ -123,7 +119,7 @@ class SimpleSim():
 #%% main (sanity test with hard coded values)
 if __name__ == '__main__':
     from matplotlib.pyplot import figure, show
-    from opticalmod import plotOptMod
+    from gridaurora.opticalmod import plotOptMod
     #
     from argparse import ArgumentParser
     p = ArgumentParser(description='analyzes HST data and makes simulations')

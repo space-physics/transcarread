@@ -1,0 +1,6 @@
+dateutil
+pytz
+numpy
+nose
+pandas
+scipy
