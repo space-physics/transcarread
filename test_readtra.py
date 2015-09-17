@@ -12,7 +12,7 @@ from matplotlib.pyplot import show
 from matplotlib.ticker import ScalarFormatter#,LogFormatter,LogFormatterMathtext #for 1e4 -> 1 x 10^4, applied DIRECTLY in format=
 #from matplotlib.ticker import MultipleLocator
 #
-from transcarread.read_tra import read_tra,doPlot,doplot1d
+from transcarread.read_tra import read_tra,doPlot
 from transcarread.parseTranscar import readTranscarInput
 #
 sfmt=ScalarFormatter()

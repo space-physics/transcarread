@@ -7,8 +7,9 @@ from matplotlib.pyplot import figure
 from matplotlib.dates import MinuteLocator, SecondLocator, DateFormatter
 from matplotlib.colors import LogNorm
 #
-from .readionoinit import compplasmaparam, parseionoheader, readionoheader
+from .readionoinit import parseionoheader, readionoheader
 from .readTranscar import picktime
+from .isriono import compplasmaparam
 """
 reads binary "transcar_output" file
 many more quantities exist in the binary file, these are the ones we use so far.
