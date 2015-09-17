@@ -8,8 +8,7 @@ from matplotlib.dates import MinuteLocator, SecondLocator, DateFormatter
 from matplotlib.colors import LogNorm
 #
 from .readionoinit import compplasmaparam, parseionoheader, readionoheader
-#from dateutil.relativedelta import relativedelta
-#from pytz import UTC
+from .readTranscar import picktime
 """
 reads binary "transcar_output" file
 many more quantities exist in the binary file, these are the ones we use so far.
@@ -18,6 +17,10 @@ requires: Matplotlib >= 1.4
 examples: test_readtra.py
 
 Michael Hirsch
+
+inputs:
+tcofn: path/filename of transcar_output file
+tReq: optional, datetime at which to extract data from file (will still read whole file first)
 
 variables:
 n_t: number of time steps in file
@@ -30,10 +33,10 @@ Note: header length = 2*ncol
 nhead = 126 #a priori from transconvec_13
 d_bytes = 4 # a priori
 
-def read_tra(tcoutput):
-    tcoutput = expanduser(tcoutput)
+def read_tra(tcofn,tReq=None):
+    tcofn = expanduser(tcofn)
 
-    head0 = readionoheader(tcoutput, nhead)[0]
+    head0 = readionoheader(tcofn, nhead)[0]
     ncol = head0['ncol']; n_alt = head0['nx']
 
     size_head = 2*ncol #+2 by defn of transconvec_13
@@ -41,14 +44,12 @@ def read_tra(tcoutput):
     size_record = size_head + size_data_record
 
     assert size_head == nhead
-
-
 #%% read data based on header
-    iono,chi,pp = loopread(tcoutput,size_record,ncol,n_alt,size_head,size_data_record)
+    iono,chi,pp = loopread(tcofn,size_record,ncol,n_alt,size_head,size_data_record,tReq)
 
     return iono,chi, pp
 
-def loopread(tcoutput,size_record,ncol,n_alt,size_head,size_data_record):
+def loopread(tcoutput,size_record,ncol,n_alt,size_head,size_data_record,tReq):
     n_t = getsize(tcoutput)//size_record//d_bytes
 
     chi  = empty(n_t,dtype=float)
@@ -57,13 +58,19 @@ def loopread(tcoutput,size_record,ncol,n_alt,size_head,size_data_record):
     ppd = {}; ionod = {}
     with open(tcoutput,'rb') as f: #reset to beginning
         for i in range(n_t):
-            ionoi, chi[i], time, ppi = data_tra(f, size_record,ncol,n_alt,
+            ionoi, chi[i], t, ppi = data_tra(f, size_record,ncol,n_alt,
                                                    size_head, size_data_record)
-            tind = time.strftime('%Y-%m-%dT%H:%M:%S')
+            tind = t.strftime('%Y-%m-%dT%H:%M:%S')
             ionod[tind] = ionoi; ppd[tind] = ppi
 
     pp = Panel(ppd).transpose(2,1,0) # isr parameter x altitude x time
     iono = Panel(ionod).transpose(2,1,0)
+#%% handle time request -- will return Dataframe if tReq, else returns Panel of all times
+    if tReq is not None: #have to qualify this since picktime default gives last time as fallback
+        tUsed = picktime(pp.minor_axis,tReq,None)[1]
+        if tUsed is not None: #remember old Python bug where datetime at midnight is False
+            iono = iono.loc[:,:,tUsed]
+            pp = pp.loc[:,:,tUsed]
 
     return iono,chi,pp
 
@@ -112,6 +119,7 @@ def doPlot(t,iono, pp, infile,cmap,tctime,sfmt):
     alt = iono.major_axis.values
 #%% ISR plasma parameters
     for ind,cn in zip(('ne','vi','Ti','Te'),(LogNorm(),None,None,None)):
+        doplot1d(pp[ind].values,alt,ind,sfmt,infile,tctime)
         fg =  figure(); ax = fg.gca()
         pcm = ax.pcolormesh(t, alt, pp[ind].values, cmap = cmap, norm=cn)
         tplot(t,tctime,fg,ax,pcm,sfmt,ind,infile)
@@ -120,26 +128,29 @@ def doPlot(t,iono, pp, infile,cmap,tctime,sfmt):
         fg = figure(); ax=fg.gca()
         pcm = ax.pcolormesh(t,alt,iono[ind].values, cmap= cmap,norm=LogNorm(),
                             vmin=0.1,vmax=1e12)
-        tplot(fg,ax,pcm,sfmt,str(ind),infile)
+        tplot(t,tctime,fg,ax,pcm,sfmt,str(ind),infile)
 
 def tplot(t,tctime,fg,ax,pcm,sfmt,ttxt,infile):
     ax.autoscale(True,tight=True)
     ax.set_xlabel('time [UTC]')
     ax.set_ylabel('altitude [km]')
-    ax.set_title(ttxt + '\n ' + infile,fontsize=12)
+    ax.set_title(ttxt + '\n ' + infile)
     fg.colorbar(pcm,format=sfmt)
     timelbl(t,ax,tctime)
     ax.xaxis.set_major_formatter(DateFormatter('%H:%M:%S'))
     ax.tick_params(axis='both', which='both', direction='out', labelsize=12)
 
-def doPlot1d(time,chi,sfmt,infile,tctime):
+def doplot1d(y,z,name,sfmt,infile,tctime):
+    if y.ndim==2: #dataframe with all times, pick last time
+        y = y[:,-1]
+
     ax = figure().gca()
-    ax.plot(time,chi)
-    ax.set_xlabel('time')
-    ax.set_ylabel('$\chi$')
-    ax.set_title('solar zenith angle \n ' + infile,fontsize=12)
+    ax.plot(y,z)
+    ax.set_xlabel(name)
+    ax.set_ylabel('altitude')
+    ax.set_title(name+'\n'+infile)
     ax.grid(True)
-    ax.yaxis.set_major_formatter(sfmt)
-    timelbl(time,ax,tctime)
-    ax.xaxis.set_major_formatter(DateFormatter('%H:%M:%S'))
-    ax.autoscale(True)
+    #ax.yaxis.set_major_formatter(sfmt)
+    #timelbl(t,ax,tctime)
+    #ax.xaxis.set_major_formatter(DateFormatter('%H:%M:%S'))
+    #ax.autoscale(True)
