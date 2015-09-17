@@ -1,8 +1,11 @@
 #!/usr/bin/env python
-from __future__ import division
+from __future__ import division,absolute_import
 from numpy import fromfile,float32, empty
 from pandas import DataFrame, Panel
-from os.path import getsize,expanduser, split, join
+from os.path import getsize,expanduser
+from matplotlib.pyplot import figure
+from matplotlib.dates import MinuteLocator, SecondLocator, DateFormatter
+from matplotlib.colors import LogNorm
 #
 from .readionoinit import compplasmaparam, parseionoheader, readionoheader
 #from dateutil.relativedelta import relativedelta
@@ -12,11 +15,9 @@ reads binary "transcar_output" file
 many more quantities exist in the binary file, these are the ones we use so far.
 requires: Matplotlib >= 1.4
 
-examples:
-./read_tra.py ~/transcar/at2/beam3915.4/dir.output/transcar_output
-./read_tra.py ~/transcar/2014-04branch/matt2013local/beam3279.5/dir.output/transcar_output
+examples: test_readtra.py
 
- Michael Hirsch
+Michael Hirsch
 
 variables:
 n_t: number of time steps in file
@@ -113,7 +114,7 @@ def doPlot(t,iono, pp, infile,cmap,tctime,sfmt):
     for ind,cn in zip(('ne','vi','Ti','Te'),(LogNorm(),None,None,None)):
         fg =  figure(); ax = fg.gca()
         pcm = ax.pcolormesh(t, alt, pp[ind].values, cmap = cmap, norm=cn)
-        tplot(fg,ax,pcm,sfmt,ind,infile)
+        tplot(t,tctime,fg,ax,pcm,sfmt,ind,infile)
 #%% ionosphere state parameters
     for ind in ('n1','n2','n3','n4','n5','n6'):
         fg = figure(); ax=fg.gca()
@@ -121,7 +122,7 @@ def doPlot(t,iono, pp, infile,cmap,tctime,sfmt):
                             vmin=0.1,vmax=1e12)
         tplot(fg,ax,pcm,sfmt,str(ind),infile)
 
-def tplot(fg,ax,pcm,sfmt,ttxt,infile):
+def tplot(t,tctime,fg,ax,pcm,sfmt,ttxt,infile):
     ax.autoscale(True,tight=True)
     ax.set_xlabel('time [UTC]')
     ax.set_ylabel('altitude [km]')
@@ -142,52 +143,3 @@ def doPlot1d(time,chi,sfmt,infile,tctime):
     timelbl(time,ax,tctime)
     ax.xaxis.set_major_formatter(DateFormatter('%H:%M:%S'))
     ax.autoscale(True)
-
-if __name__=='__main__':
-    from argparse import ArgumentParser
-    from parseTranscar import readTranscarInput
-
-    p = ArgumentParser(description='reads dir.output/transcar_output')
-    p.add_argument('tofn',help='dir.output/transcar_output file to use',type=str)
-    p.add_argument('--profile',help='profile performance',action='store_true')
-    p.add_argument('--noplot',help='disable plotting',action="store_true")
-    a = p.parse_args()
-    doplot = not a.noplot
-    #tcoutput = '~/transcar/AT1/beam11335./dir.output/transcar_output'
-    doplot = not a.noplot
-
-
-    if a.profile:
-        import cProfile
-        from pstats import Stats
-        profFN = 'read_tra.pstats'
-        print('saving profile results to ' + profFN)
-        cProfile.run('read_tra(a.tofn)',profFN)
-        Stats(profFN).sort_stats('time','cumulative').print_stats(50)
-    else:
-        iono,chi,pp = read_tra(a.tofn)
-
-        if doplot:
-            from matplotlib.pyplot import figure, show
-            from matplotlib.ticker import ScalarFormatter,LogFormatter,LogFormatterMathtext #for 1e4 -> 1 x 10^4, applied DIRECTLY in format=
-            #from matplotlib.ticker import MultipleLocator
-            from matplotlib.dates import MinuteLocator, SecondLocator, DateFormatter
-            from matplotlib.colors import LogNorm
-
-            datfn = join(split(split(a.tofn)[0])[0],'dir.input/DATCAR')
-            tctime = readTranscarInput(datfn)
-
-            #sfmt = LogFormatter()
-            sfmt=ScalarFormatter()
-            #sfmt.set_scientific(True)
-           # sfmt.set_useOffset(False)
-           # sfmt.set_powerlimits((-2, 2))
-
-    #%% do plot
-            t = pp.minor_axis.to_datetime().to_pydatetime()
-            doPlot(t,iono,pp, a.tofn, 'jet',tctime,sfmt)
-
-            doPlot1d(t,chi,sfmt,a.tofn, tctime)
-
-            show()
-

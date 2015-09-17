@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
 from __future__ import division,print_function,absolute_import
+import logging
 from os.path import expanduser,join
 from numpy import s_
-
-from warnings import warn
 #
 from .readExcrates import ExcitationRates
 from .parseTranscar import readTranscarInput
 from histutils.findnearest import find_nearest
 #
 '''
-getTranscar is the function called by "hist-feasibility" to get Transcar modeled VER/flux
+calcVERtc is the function called by "hist-feasibility" to get Transcar modeled VER/flux
 
 outputs:
 --------
@@ -35,52 +34,52 @@ for each energy bin, we take Plambda through the EMCCD window and optional BG3 f
 yielding Peigen, a ver eigenprofile p(z,E) for that particular energy
 '''
 
-def calcVERtc(infile,datadir,beamEnergy,tReq,sim,dbglvl):
+def calcVERtc(infile,datadir,beamEnergy,tReq,sim):
 #%% get beam directory
-#    if beamEnergy % 1 == 0:
-#        enerStr = enerStr[:-1] #discard trailing zero (not needed anymore)
     try:
         beamdir = expanduser(join(datadir,'beam{}'.format(beamEnergy)))
-        if dbglvl>0: print(beamEnergy)
+        logging.debug(beamEnergy)
     except AttributeError as e:
-        warn('you must specify the root path to the transcar output. {}'.format(e))
+        logging.error('you must specify the root path to the transcar output. {}'.format(e))
         raise
 #%% read simulation parameters
     tctime = readTranscarInput(join(beamdir,'dir.input',sim.transcarconfig))
-    if tctime is None: return None, None #leave here
+    if tctime is None:
+        return None, None #leave here
 
     try:
       if not tctime['tstartPrecip'] < tReq < tctime['tendPrecip']:
-        print('precip start/end: {} / {}'.format(tctime['tstartPrecip'],tctime['tendPrecip']) )
-        warn('your requested time {} is outside the precipitation time'.format(tReq))
+        logging.info('precip start/end: {} / {}'.format(tctime['tstartPrecip'],tctime['tendPrecip']) )
+        logging.error('your requested time {} is outside the precipitation time'.format(tReq))
         tReq = tctime['tendPrecip']
-        warn('falling back to using the end simulation time: {}'.format(tReq))
+        logging.warning('falling back to using the end simulation time: {}'.format(tReq))
     except TypeError as e:
         tReq=None
-        warn('problem with requested time : {} beam {}  {}'.format(tReq,beamEnergy,e))
+        logging.error('problem with requested time : {} beam {}  {}'.format(tReq,beamEnergy,e))
 #%% convert transcar output
-    spec, tTC, dipangle = ExcitationRates(beamdir,infile,dbglvl)
+    spec, tTC, dipangle = ExcitationRates(beamdir,infile)
 
     try:
         tReqInd = find_nearest(tTC,tReq)[0]
     except TypeError as e:
-        warn('problem with requested time indexing. {}  {}'.format(beamEnergy,e))
+        logging.warning('problem with requested time indexing. {}  {}'.format(beamEnergy,e))
         tReqInd = s_[-1]
 
     try:
         tUsed = tTC[tReqInd]
     except (TypeError,IndexError) as e:
-        warn('using last time in place of requested time for beam {}  {}'.format(beamEnergy,e))
+        logging.warning('using last time in place of requested time for beam {}  {}'.format(beamEnergy,e))
         try:
             tUsed = tTC[-1]
         except TypeError as e:
-            warn('failed to find any usable time, simulation error likely.  {}'.format(e))
+            logging.warning('failed to find any usable time, simulation error likely.  {}'.format(e))
             tUsed=None
 
     return spec,tUsed,tReqInd
 #%% plotting
 def plotPeigen(Peigen):
-    if Peigen is None: return
+    if Peigen is None:
+        return
 
     fg = figure()
     ax = fg.gca()
@@ -134,10 +133,10 @@ if __name__ == '__main__':
     if p.profile:
         import cProfile,pstats
         proffn = 'readTranscar.pstats'
-        cProfile.run('getTranscar(sim, a.verbose)',proffn)
+        cProfile.run('calcVERtc(sim, p.verbose)',proffn)
         pstats.Stats(proffn).sort_stats('time','cumulative').print_stats(50)
     else:
-        Peigen, EKpcolor, Plambda=getTranscar(sim, p.verbose)
+        Peigen, EKpcolor, Plambda = calcVERtc(sim, p.verbose)
         plotPeigen(Peigen)
         plotOptMod(Plambda,Peigen)
         show()
