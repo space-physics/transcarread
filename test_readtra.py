@@ -33,7 +33,7 @@ def main(fn,tReq,verbose):
     iono,chi, pp = read_tra(fn,tReq)
 #%% do plot
     t = pp.minor_axis.to_datetime().to_pydatetime()
-    doPlot(t,iono,pp, fn, 'jet',tctime,sfmt,verbose)
+    doPlot(t,iono,pp, fn, 'cubehelix',tctime,sfmt,verbose)
 
     #doplot1d(t,chi,'$\chi$',sfmt,fn, tctime)
 
