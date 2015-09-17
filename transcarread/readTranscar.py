@@ -59,23 +59,29 @@ def calcVERtc(infile,datadir,beamEnergy,tReq,sim):
 #%% convert transcar output
     spec, tTC, dipangle = ExcitationRates(beamdir,infile)
 
+    tReqInd,tUsed = picktime(tTC,tReq,beamEnergy)
+
+    return spec,tUsed,tReqInd
+
+def picktime(tTC,tReq,beamEnergy):
     try:
         tReqInd = find_nearest(tTC,tReq)[0]
     except TypeError as e:
-        logging.warning('problem with requested time indexing. {}  {}'.format(beamEnergy,e))
+        logging.error('using last time in place of requested time for beam {}  {}'.format(beamEnergy,e))
         tReqInd = s_[-1]
 
     try:
         tUsed = tTC[tReqInd]
     except (TypeError,IndexError) as e:
-        logging.warning('using last time in place of requested time for beam {}  {}'.format(beamEnergy,e))
+        logging.error('using last time in place of requested time for beam {}  {}'.format(beamEnergy,e))
         try:
             tUsed = tTC[-1]
         except TypeError as e:
-            logging.warning('failed to find any usable time, simulation error likely.  {}'.format(e))
+            logging.critical('failed to find any usable time, simulation error likely.  {}'.format(e))
             tUsed=None
 
-    return spec,tUsed,tReqInd
+    return tReqInd,tUsed
+
 #%% plotting
 def plotPeigen(Peigen):
     if Peigen is None:
