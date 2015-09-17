@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-from __future__ import division
+from __future__ import division,absolute_import
+import logging
 from numpy import asarray, s_, empty
 from os.path import expanduser,join
 from datetime import datetime as dt
@@ -7,7 +8,6 @@ from dateutil.relativedelta import relativedelta
 from pytz import UTC
 from pandas import DataFrame, Panel
 from time import time
-from warnings import warn
 """
 Michael Hirsch 2014
 Parses the ASCII dir.output/emissions.dat in milliseconds
@@ -33,22 +33,21 @@ NdataCol = 11 #FIXME assuming this is always true (seems likely)
 NprecipCol = 2
 
 
-def ExcitationRates(datadir,infile,dbglvl=0):
-    excrate, dipangle, precip, t = readexcrates(
-                                        join(datadir,'dir.output'),infile)
+def ExcitationRates(datadir,infile):
+    excrate, dipangle, precip, t = readexcrates(join(datadir,'dir.output'), infile)
     # breakup slightly to meet needs of simpler external programs
     #z = excite.major_axis.values
     return excrate, t, dipangle
 
-def initparams(datadir,infile,dbglvl=0):
+def initparams(datadir,infile):
     kinfn =   join(expanduser(datadir), infile)
 
     try:
         with open(kinfn, 'r') as fid: #going to rewind after this priming read
             line = fid.readline()
     except IOError as e:
-        warn('could not read/find file {}  due to {}'.format(kinfn,e))
-        return None, None, None, None, None, None, None, None
+        logging.error('could not read/find file {}  due to {}'.format(kinfn,e))
+        return (None,)*8
 
     ctime,dip,nalt,nen = getHeader(line)
 
@@ -57,15 +56,14 @@ def initparams(datadir,infile,dbglvl=0):
     # how many rows of data (less header) to read in a batch
     ndatrow = (ndat + Nprecip)//NumPerRow  + 1
 
-    if dbglvl>0: 
-        print('{} {} Nalt: {} nen: {} dipangle[deg]: {:.2f}'.format(kinfn,ctime,nalt,nen,dip))
+    logging.debug('{} {} Nalt: {} nen: {} dipangle[deg]: {:.2f}'.format(kinfn,ctime,nalt,nen,dip))
 
     return kinfn,nalt,nen,dip,ctime,ndatrow,ndat,Nprecip
 
-def readexcrates(datadir,infile='emissions.dat',verb=0):
-    kinfn,nalt,nen,dipangle,ctime,ndatrow,ndat,Nprecip = initparams(datadir,infile,verb)
+def readexcrates(datadir,infile):
+    kinfn,nalt,nen,dipangle,ctime,ndatrow,ndat,Nprecip = initparams(datadir,infile)
     if kinfn is None:
-        return None, None, None, None
+        return (None,)*4
     #using read_csv was vastly slower!
 
     with open(kinfn,'r') as f:
@@ -141,5 +139,5 @@ if __name__=='__main__':
 
         tic = time()
         spec,timeop,dipangle= ExcitationRates(ar.path,ar.emisfn)
-        print('{:0.3f}'.format(time()-tic), ' sec., new way')
+        print('{:.3f}'.format(time()-tic), ' sec., new way')
 

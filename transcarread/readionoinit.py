@@ -21,6 +21,7 @@ This output is stored in dir.output/transcar_output, which is read by
 read_tra.py in a similar manner to this code
 """
 from __future__ import division,absolute_import
+import logging
 from pandas import DataFrame
 from os.path import expanduser, split
 from numpy import fromfile, float32, arange, asarray
@@ -72,7 +73,7 @@ def interpdat(md, dz, hd, pp, raw,newaltmethod):
     if malt == 'tanh':
         z_new = setupz(md.shape[0], md.index[0], dz[0], dz[1])
     elif malt == 'linear':
-        print('interpolating to grid space {:0.2f}'.format(dz) + ' km.')
+        print('interpolating to grid space {:.2f}'.format(dz) + ' km.')
         z_new = arange(md.index[0], md.index[-1], dz[0], dtype=float)
     elif malt =='incr':
         """
@@ -86,11 +87,11 @@ def interpdat(md, dz, hd, pp, raw,newaltmethod):
             cdz+=dz[0]
         z_new = asarray(z_new)
     else:
-        print('** unknown interp method ' + newaltmethod +', returning unaltered values.')
+        logging.warning('unknown interp method {}, returning unaltered values.'.format(newaltmethod))
         return md, hd, pp, raw
 
     if z_new.size>toobig:
-        print('note: Transcar may not accept altitude grids with more than about ' + str(toobig) +' elements.')
+        logging.warning('note: Transcar may not accept altitude grids with more than about {} elements.'.format(toobig))
 
 
 
