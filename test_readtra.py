@@ -21,7 +21,7 @@ sfmt=ScalarFormatter()
 #    sfmt.set_useOffset(False)
 #    sfmt.set_powerlimits((-2, 2))
 
-def main(fn,tReq):
+def main(fn,tReq,verbose):
 #%% get sim parameters
     datfn = join(split(split(fn)[0])[0],'dir.input/DATCAR')
     tctime = readTranscarInput(datfn)
@@ -33,7 +33,7 @@ def main(fn,tReq):
     iono,chi, pp = read_tra(fn,tReq)
 #%% do plot
     t = pp.minor_axis.to_datetime().to_pydatetime()
-    doPlot(t,iono,pp, fn, 'jet',tctime,sfmt)
+    doPlot(t,iono,pp, fn, 'jet',tctime,sfmt,verbose)
 
     #doplot1d(t,chi,'$\chi$',sfmt,fn, tctime)
 
@@ -47,6 +47,7 @@ if __name__=='__main__':
     p.add_argument('--tReq',help='time to extract data at')
     p.add_argument('--profile',help='profile performance',action='store_true')
     p.add_argument('--noplot',help='disable plotting',action="store_true")
+    p.add_argument('-v','--verbose',help='more plots',action='count',default=0)
     p = p.parse_args()
 
     doplot = not p.noplot
@@ -59,5 +60,5 @@ if __name__=='__main__':
         cProfile.run('main(p.tofn)',profFN)
         Stats(profFN).sort_stats('time','cumulative').print_stats(50)
     else:
-        iono,chi,pp,t,tctime = main(p.tofn,p.tReq)
+        iono,chi,pp,t,tctime = main(p.tofn,p.tReq,p.verbose)
         show()

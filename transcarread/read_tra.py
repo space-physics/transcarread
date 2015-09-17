@@ -115,7 +115,7 @@ def timelbl(time,ax,tctime):
     ax.axvline(tctime['tstartPrecip'], color='red', linestyle='--', label='Precip. Start')
     ax.axvline(tctime['tendPrecip'], color='red', linestyle='--',label='Precip. End')
 
-def doPlot(t,iono, pp, infile,cmap,tctime,sfmt):
+def doPlot(t,iono, pp, infile,cmap,tctime,sfmt,verbose):
     alt = iono.major_axis.values
 #%% ISR plasma parameters
     for ind,cn in zip(('ne','vi','Ti','Te'),(LogNorm(),None,None,None)):
@@ -124,11 +124,12 @@ def doPlot(t,iono, pp, infile,cmap,tctime,sfmt):
         pcm = ax.pcolormesh(t, alt, pp[ind].values, cmap = cmap, norm=cn)
         tplot(t,tctime,fg,ax,pcm,sfmt,ind,infile)
 #%% ionosphere state parameters
-    for ind in ('n1','n2','n3','n4','n5','n6'):
-        fg = figure(); ax=fg.gca()
-        pcm = ax.pcolormesh(t,alt,iono[ind].values, cmap= cmap,norm=LogNorm(),
-                            vmin=0.1,vmax=1e12)
-        tplot(t,tctime,fg,ax,pcm,sfmt,str(ind),infile)
+    if verbose>0:
+        for ind in ('n1','n2','n3','n4','n5','n6'):
+            fg = figure(); ax=fg.gca()
+            pcm = ax.pcolormesh(t,alt,iono[ind].values, cmap= cmap,norm=LogNorm(),
+                                vmin=0.1,vmax=1e12)
+            tplot(t,tctime,fg,ax,pcm,sfmt,str(ind),infile)
 
 def tplot(t,tctime,fg,ax,pcm,sfmt,ttxt,infile):
     ax.autoscale(True,tight=True)
