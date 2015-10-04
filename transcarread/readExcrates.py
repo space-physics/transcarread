@@ -33,7 +33,7 @@ NdataCol = 11 #FIXME assuming this is always true (seems likely)
 NprecipCol = 2
 
 
-def ExcitationRates(datadir,infile):
+def ExcitationRates(datadir,infile='emissions.dat'):
     excrate, dipangle, precip, t = readexcrates(join(datadir,'dir.output'), infile)
     # breakup slightly to meet needs of simpler external programs
     #z = excite.major_axis.values
