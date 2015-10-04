@@ -1,8 +1,8 @@
-#!/usr/bin/env python3
 from __future__ import division,print_function,absolute_import
 import logging
 from os.path import expanduser,join
 from numpy import s_
+from matplotlib.pyplot import figure
 #
 from .readExcrates import ExcitationRates
 from .parseTranscar import readTranscarInput
@@ -109,7 +109,7 @@ class SimpleSim():
         self.opticalfilter = filt
         self.minbeamev = 0
         #self.maxbeamev = #future
-        self.transcarev = '~/code/transcar/dir.transcar.server/BT_E1E2prev.csv'
+        self.transcarev = '~/code/transcar/transcar/BT_E1E2prev.csv'
         self.transcarutc = ''
         self.excratesfn = 'emissions.dat'
         self.transcarpath = inpath
@@ -121,28 +121,3 @@ class SimpleSim():
         self.qefn = 'precompute/emccdQE.h5'
         self.zenang = 12.5 #90-Bincl
         self.obsalt_km=0.3
-#%% main (sanity test with hard coded values)
-if __name__ == '__main__':
-    from matplotlib.pyplot import figure, show
-    from gridaurora.opticalmod import plotOptMod
-    #
-    from argparse import ArgumentParser
-    p = ArgumentParser(description='analyzes HST data and makes simulations')
-    p.add_argument('--profile',help='profile performance',action='store_true')
-    p.add_argument('--filter',help='optical filter choices: bg3   none',default='bg3')
-    p.add_argument('-v','--verbose',help='debug',action='count',default=0)
-    p.add_argument('tcopath',help='set path from which to read transcar output files')
-    p = p.parse_args()
-#%% setup sim
-    sim = SimpleSim(p.filter,p.tcopath)
-#%% run sim
-    if p.profile:
-        import cProfile,pstats
-        proffn = 'readTranscar.pstats'
-        cProfile.run('calcVERtc(sim, p.verbose)',proffn)
-        pstats.Stats(proffn).sort_stats('time','cumulative').print_stats(50)
-    else:
-        Peigen, EKpcolor, Plambda = calcVERtc(sim, p.verbose)
-        plotPeigen(Peigen)
-        plotOptMod(Plambda,Peigen)
-        show()
