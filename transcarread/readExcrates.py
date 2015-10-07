@@ -7,7 +7,7 @@ from datetime import datetime as dt
 from dateutil.relativedelta import relativedelta
 from pytz import UTC
 from pandas import DataFrame, Panel
-from time import time
+from matplotlib.pyplot import figure
 """
 Michael Hirsch 2014
 Parses the ASCII dir.output/emissions.dat in milliseconds
@@ -94,8 +94,8 @@ def readexcrates(datadir,infile):
         pf[t[i].strftime('%Y-%m-%dT%H:%M:%S%Z')] = DataFrame(p,
                                                       columns=('e','fluxdown'))
 
-    excrate = Panel(excf).transpose(2,1,0)
-    precip = Panel(pf) #FIXME what's the index here?
+    excrate = Panel(excf).transpose(2,1,0) #turn dict of DataFrames into Panel, index is datetime
+    precip = Panel(pf) #dict to Panel, index is datetime
     return excrate, dipangle, precip, t
 
 def getHeader(line):
@@ -117,27 +117,24 @@ def getHeader(line):
 
 def parseheadtime(h):
     return dt.strptime(str(int(h[0])),'%Y%j').replace(tzinfo=UTC) + relativedelta(seconds=float(h[1]))
-#%% command line
-if __name__=='__main__':
-    from argparse import ArgumentParser
-    p = ArgumentParser(description='Read Transcar excitation rates')
-    p.add_argument('--emisfn',help='emissions.dat filename',default='emissions.dat')
-    p.add_argument('path',help='path where dir.output/emissions.dat is')
-    p.add_argument('--profile',help='profile performance',action='store_true')
-    p.add_argument('-p','--doplot',help='plot',action='store_true')
-    ar = p.parse_args()
 
-    dbglvl=1
-    #doEflux = ar.eflux
-
-    if ar.profile:
-        import cProfile,pstats
-        proffn = 'excstats.pstats'
-        cProfile.run('ExcitationRates(ar.path,ar.emisfn)',proffn)
-        pstats.Stats(proffn).sort_stats('time','cumulative').print_stats(50)
+#%% plotting
+def plotExcrates(spec,tReq=None):
+    if isinstance(spec,Panel) and isinstance(tReq,dt):
+        spec = spec.loc[:,:,tReq]
+    elif isinstance(spec,Panel):
+        spec = spec.iloc[:,:,-1]
+    elif isinstance(spec,DataFrame):
+        pass
     else:
+        return
 
-        tic = time()
-        spec,timeop,dipangle= ExcitationRates(ar.path,ar.emisfn)
-        print('{:.3f}'.format(time()-tic), ' sec., new way')
-
+    ax = figure().gca()
+    ax.plot(spec.values,spec.index)
+    ax.set_xscale('log')
+    ax.set_xlim(left=1e-4)
+    ax.set_xlabel('Excitation')
+    ax.set_ylabel('altitude [km]')
+    ax.set_title('excitation rates')
+    ax.legend(spec.columns)
+    ax.grid(True)
