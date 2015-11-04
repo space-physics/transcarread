@@ -14,10 +14,12 @@ from transcarread.read_tra import read_tra
 from transcarread.parseTranscar import readTranscarInput
 from transcarread.readTranscar import calcVERtc,SimpleSim
 
+tdir  = Path(__file__).parent
+
 def test_readtra():
 #%% get sim parameters
-    ifn   = Path('data/DATCAR')
-    tcofn = Path('data/beam52.726/dir.output/transcar_output')
+    ifn   = tdir / 'data/DATCAR'
+    tcofn = tdir / 'data/beam52.726/dir.output/transcar_output'
     tReq = datetime(2013,3,31,9,0,21,tzinfo=UTC)
     H = readTranscarInput(ifn)
 #%% load transcar output
@@ -30,8 +32,8 @@ def test_readtra():
 
 def test_readtranscar():
     tReq = datetime(2013,3,31,9,0,21,tzinfo=UTC)
-    sim = SimpleSim('bg3','data/beam52.726/dir.output')
-    excrates, tUsed, tReqInd = calcVERtc('emissions.dat','data',52.726,tReq,sim)
+    sim = SimpleSim('bg3',tdir/'data/beam52.726/dir.output')
+    excrates, tUsed, tReqInd = calcVERtc('emissions.dat',tdir/'data',52.726,tReq,sim)
 #%%
     assert_allclose(excrates['no1d'].iloc[53,0],15638.620000000001)
     assert tUsed==datetime(2013, 3, 31, 9, 0, 42, tzinfo=UTC)
