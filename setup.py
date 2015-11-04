@@ -11,6 +11,6 @@ setup(name='transcarread',
 	  long_description=long_description,
 	  author='Michael Hirsch',
 	  url='https://github.com/scienceopen/transcarread',
-	  install_requires=['numpy','pytz','pandas','scipy'],
+	  install_requires=['pathlib2'],
       packages=['transcarread'],
 	  )

@@ -21,9 +21,9 @@ This output is stored in dir.output/transcar_output, which is read by
 read_tra.py in a similar manner to this code
 """
 from __future__ import division,absolute_import
+from pathlib2 import Path
 import logging
 from pandas import DataFrame
-from os.path import expanduser, split
 from numpy import fromfile, float32, arange, asarray
 from datetime import datetime
 from scipy.interpolate import interp1d
@@ -38,8 +38,6 @@ headbytes = 504 #from inspection of "good" .dat file, x1F8=d504, 504 gets us up 
 toobig = 300 #beyond which number of altitude cells transcar will crash
 
 def readmsis(ifn, ofn, dz, newaltmethod):
-    ifn = expanduser(ifn)
-
     nhead = headbytes//d_bytes
     hd,hdraw = readionoheader(ifn,nhead)
 
@@ -119,20 +117,20 @@ def interpdat(md, dz, hd, pp, raw,newaltmethod):
 def writeinterpunformat(nx, rawi, hdraw, ofn):
     if ofn is None:
         return
-
+    ofn = Path(ofn).expanduser()
     #update header with new number of altitudes due to interpolation
     hdraw[0] = nx
 
-    print('writing ' + ofn)
-    with open(ofn, 'wb') as f:
+    print('writing {}'.format(ofn))
+    with ofn.open('wb') as f:
         hdraw.tofile(f,'','%f32')
         rawi.astype(float32).tofile(f,'','%f32')
 
 
 def readionoheader(ifn, nhead):
-    ifn = expanduser(ifn) #not dupe, for those importing externally
+    ifn = Path(ifn).expanduser() #not dupe, for those importing externally
 
-    with open(ifn, 'rb') as f: #python2 requires r to be first
+    with ifn.open('rb') as f: #python2 requires r to be first
         h = fromfile(f, float32, nhead)
 
     return parseionoheader(h), h
@@ -156,6 +154,7 @@ def parseionoheader(h):
     return hd
 
 def readinitconddat(hd,fn):
+    fn = Path(fn).expanduser()
     nx = hd['nx']
     ncol = hd['ncol']
 
@@ -171,7 +170,7 @@ def readinitconddat(hd,fn):
 
     dextind += (49,) #as in output
 
-    with open(fn, 'rb') as f: #python2 requires r first
+    with fn.open('rb') as f: #python2 requires r first
         ipos = 2* ncol *d_bytes
         f.seek(ipos,0)
         rawall = fromfile(f,float32,nx*ncol).reshape((nx,ncol),order='C') #yes order='C'!
@@ -215,7 +214,7 @@ def doplot(d, pp, ifn):
     plotisr(pp, 11,(90,300),ifn)
 
 def plotisr(pp,fgn,zlim,ifn):
-    bn = split(ifn)[1]
+    bn = Path(ifn).name
     figure(fgn).clf()
 
     fg,ax = subplots(nrows=1,ncols=3,sharey=True, num=fgn, figsize=(12,5))
