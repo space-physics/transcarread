@@ -1,6 +1,6 @@
 from __future__ import division,print_function,absolute_import
+from pathlib2 import Path
 import logging
-from os.path import expanduser,join
 from numpy import s_
 from datetime import datetime
 from dateutil.parser import parse
@@ -34,14 +34,10 @@ yielding Peigen, a ver eigenprofile p(z,E) for that particular energy
 
 def calcVERtc(infile,datadir,beamEnergy,tReq,sim):
 #%% get beam directory
-    try:
-        beamdir = expanduser(join(datadir,'beam{}'.format(beamEnergy)))
-        logging.debug(beamEnergy)
-    except Exception as e:
-        logging.critical('you must specify the root path to the transcar output. {}'.format(e))
-        raise
+    beamdir = Path(datadir) / 'beam{}'.format(beamEnergy)
+    logging.debug(beamEnergy)
 #%% read simulation parameters
-    tctime = readTranscarInput(join(beamdir,'dir.input',sim.transcarconfig))
+    tctime = readTranscarInput(beamdir/'dir.input'/sim.transcarconfig)
     if tctime is None:
         return None, None #leave here
 
@@ -87,11 +83,11 @@ class SimpleSim():
     """
     def __init__(self,filt,inpath,reacreq=None,lambminmax=None,transcarutc=''):
         self.loadver = False
-        self.loadverfn = 'precompute/01Mar2011_FA.h5'
+        self.loadverfn = Path('precompute/01Mar2011_FA.h5')
         self.opticalfilter = filt
         self.minbeamev = 0
         #self.maxbeamev = #future
-        self.transcarev = '~/code/transcar/transcar/BT_E1E2prev.csv'
+        self.transcarev = Path('~/code/transcar/transcar/BT_E1E2prev.csv')
 
         self.excratesfn = 'emissions.dat'
         self.transcarpath = inpath
@@ -112,9 +108,9 @@ class SimpleSim():
         else:
             self.lambminmax = lambminmax
 
-        self.reactionfn = 'precompute/vjeinfc.h5'
-        self.bg3fn = 'precompute/BG3transmittance.h5'
-        self.windowfn = 'precompute/ixonWindowT.h5'
-        self.qefn = 'precompute/emccdQE.h5'
+        self.reactionfn = Path('precompute/vjeinfc.h5')
+        self.bg3fn = Path('precompute/BG3transmittance.h5')
+        self.windowfn = Path('precompute/ixonWindowT.h5')
+        self.qefn = Path('precompute/emccdQE.h5')
         self.zenang = 12.5 #90-Bincl
         self.obsalt_km=0.3

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 from __future__ import division,absolute_import
 import logging
+from pathlib2 import Path
 from numpy import asarray, s_, empty
-from os.path import expanduser,join
 from datetime import datetime as dt
 from dateutil.relativedelta import relativedelta
 from pytz import UTC
@@ -34,16 +34,16 @@ NprecipCol = 2
 
 
 def ExcitationRates(datadir,infile='emissions.dat'):
-    excrate, dipangle, precip, t = readexcrates(join(datadir,'dir.output'), infile)
+    excrate, dipangle, precip, t = readexcrates(Path(datadir)/'dir.output', infile)
     # breakup slightly to meet needs of simpler external programs
     #z = excite.major_axis.values
     return excrate, t, dipangle
 
 def initparams(datadir,infile):
-    kinfn =   join(expanduser(datadir), infile)
+    kinfn =   (Path(datadir) / infile).expanduser()
 
     try:
-        with open(kinfn, 'r') as fid: #going to rewind after this priming read
+        with kinfn.open('r') as fid: #going to rewind after this priming read
             line = fid.readline()
     except IOError as e:
         logging.error('could not read/find file {}  due to {}'.format(kinfn,e))
@@ -62,11 +62,9 @@ def initparams(datadir,infile):
 
 def readexcrates(datadir,infile):
     kinfn,nalt,nen,dipangle,ctime,ndatrow,ndat,Nprecip = initparams(datadir,infile)
-    if kinfn is None:
-        return (None,)*4
     #using read_csv was vastly slower!
 
-    with open(kinfn,'r') as f:
+    with kinfn.open('r') as f:
         dstream = asarray(f.read().split()).astype(float)
     #print(time()-tic)
     nhead = NumPerRow

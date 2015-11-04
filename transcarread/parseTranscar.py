@@ -1,18 +1,17 @@
 #!/usr/bin/env python3
 from __future__ import division,absolute_import
+from pathlib2 import Path
 from datetime import datetime as dt
 from dateutil.relativedelta import relativedelta
 from pytz import UTC
-from os.path import expanduser
 '''
 The transcar input file is indexed by line number --this is what the Fortran
   #  code of transcar does, and it's what we do here as well.
 '''
 def readTranscarInput(infn):
-    infn = expanduser(infn)
+    infn = Path(infn).expanduser()
     hd = {}
-    try:
-      with open(infn,'r') as f:
+    with infn.open('r') as f:
         hd['kiappel'] =           int(f.readline().split(None)[0])
         hd['precfile'] =              f.readline().split(None)[0]
         hd['dtsim'] =           float(f.readline().split(None)[0]) #"dto"
@@ -50,9 +49,6 @@ def readTranscarInput(infn):
         hd['tendSim'] =      hd['dayofsim'] + relativedelta(seconds=hd['simlengthsec']) #TODO verify this isn't added to start
         hd['tstartPrecip'] = hd['dayofsim'] + relativedelta(seconds=hd['precipstartsec'])
         hd['tendPrecip'] =   hd['dayofsim'] + relativedelta(seconds=hd['precipendsec'])
-    except IOError as e: #python 2.7 doesn't have FileNotFoundError
-        print(e)
-        return None
 
     return hd
 
