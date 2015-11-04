@@ -11,6 +11,6 @@ setup(name='transcarread',
 	  long_description=long_description,
 	  author='Michael Hirsch',
 	  url='https://github.com/scienceopen/transcarread',
-	  install_requires=['pathlib2'],
+	  install_requires=['pathlib2>=2.1.0'],
       packages=['transcarread'],
 	  )
