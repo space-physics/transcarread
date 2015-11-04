@@ -50,7 +50,7 @@ def read_tra(tcofn,tReq=None):
 
 def loopread(tcoutput,size_record,ncol,n_alt,size_head,size_data_record,tReq):
     tcoutput = Path(tcoutput).expanduser()
-    n_t = tcoutput.stat.st_size//size_record//d_bytes
+    n_t = tcoutput.stat().st_size//size_record//d_bytes
 
     chi  = empty(n_t,dtype=float)
 
@@ -60,14 +60,14 @@ def loopread(tcoutput,size_record,ncol,n_alt,size_head,size_data_record,tReq):
         for i in range(n_t):
             ionoi, chi[i], t, ppi = data_tra(f, size_record,ncol,n_alt,
                                                    size_head, size_data_record)
-            tind = t.strftime('%Y-%m-%dT%H:%M:%S')
-            ionod[tind] = ionoi; ppd[tind] = ppi
+
+            ionod[t] = ionoi; ppd[t] = ppi
 
     pp = Panel(ppd).transpose(2,1,0) # isr parameter x altitude x time
     iono = Panel(ionod).transpose(2,1,0)
 #%% handle time request -- will return Dataframe if tReq, else returns Panel of all times
     if tReq is not None: #have to qualify this since picktime default gives last time as fallback
-        tUsed = picktime(pp.minor_axis,tReq,None)[1]
+        tUsed = picktime(pp.minor_axis.to_pydatetime(),tReq,None)[1]
         if tUsed is not None: #remember old Python bug where datetime at midnight is False
             iono = iono.loc[:,:,tUsed]
             pp = pp.loc[:,:,tUsed]

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+from __future__ import division,absolute_import
 from transcarread.readTranscar import calcVERtc,SimpleSim
 from dateutil.parser import parse
 #%% main (sanity test with hard coded values)

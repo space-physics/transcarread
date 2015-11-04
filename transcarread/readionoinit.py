@@ -26,6 +26,7 @@ import logging
 from pandas import DataFrame
 from numpy import fromfile, float32, arange, asarray
 from datetime import datetime
+from pytz import UTC
 from scipy.interpolate import interp1d
 #
 from gridaurora.ztanh import setupz
@@ -57,7 +58,7 @@ def getaltgrid(ifn):
     Helper function for HiST-feasibility to quickly get transcar alt grid
     """
     nhead = headbytes//d_bytes
-    hd,hdraw = readionoheader(ifn,nhead)
+    hd = readionoheader(ifn,nhead)[0]
     msis,raw = readinitconddat(hd,ifn) #index is altitude (km)
 
     return msis.index.values
@@ -128,6 +129,7 @@ def writeinterpunformat(nx, rawi, hdraw, ofn):
 
 
 def readionoheader(ifn, nhead):
+    """ reads BINARY transcar_output file """
     ifn = Path(ifn).expanduser() #not dupe, for those importing externally
 
     with ifn.open('rb') as f: #python2 requires r to be first
@@ -136,10 +138,16 @@ def readionoheader(ifn, nhead):
     return parseionoheader(h), h
 
 def parseionoheader(h):
+    assert 1<=h[3]<=12
+    assert 1<=h[4]<=31
+    assert 0<=h[5]<24
+    assert 0<=h[6]<60
+    assert 0<=h[7]<60
+    #... and so on with asserts. Just checking we aren't reading the totally wrong type of file
     # not a Series because all have to be same datatype
     # not a Dataframe because it's only 1-D
     hd = {'nx':h[0].astype(int), 'ncol':h[1].astype(int),
-          'year':h[2], 'month':h[3], 'day':h[4], 'hour':h[5], 'minute':h[6], 'second':h[7],
+          #'year':h[2], 'month':h[3], 'day':h[4], 'hour':h[5], 'minute':h[6], 'second':h[7],
           'intpas':h[8], 'longeo':h[9], 'latgeo':h[10], 'lonmag':h[11], 'latmag':h[12],
           'tmag':h[13], 'f1072':h[14], 'f1073':h[15], 'ap2':h[16], 'ikp':h[17],
           'dTinf':h[18], 'dUinf':h[19], 'cofo':h[20], 'cofh':h[21],'cofn':h[22],
@@ -148,8 +156,8 @@ def parseionoheader(h):
     # h[37] last non-zero value till h[59], then zeros till start of data at byte 504
     # h[59] has value of 1.0
 
-    hd['htime'] = datetime(year=hd['year'], month=hd['month'], day=hd['day'],
-                     hour=hd['hour'], minute=hd['minute'], second=hd['second'])
+    hd['htime'] = datetime(year=h[2], month=h[3], day=h[4],
+                           hour=h[5], minute=h[6], second=h[7],tzinfo=UTC)
 
     return hd
 

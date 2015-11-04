@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 """ test readexcrates.py
 """
+from __future__ import division,absolute_import
 from transcarread.readExcrates import ExcitationRates,plotExcrates
-try:
-    import seaborn
-except:
-    pass
+import seaborn
+
 #%% command line
 if __name__=='__main__':
     from matplotlib.pyplot import show
