@@ -2,6 +2,7 @@ from __future__ import division,absolute_import
 from pandas import DataFrame
 
 def compplasmaparam(iono,approx):
+    assert isinstance(iono,DataFrame)
 
     pp = DataFrame(index=iono.index,
                    columns=('ne','vi','Ti','Te'))

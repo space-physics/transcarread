@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 from __future__ import division,absolute_import
+from pathlib2 import Path
 from numpy import fromfile,float32, empty
 from pandas import DataFrame, Panel
-from os.path import getsize,expanduser
 from matplotlib.pyplot import figure
 from matplotlib.dates import MinuteLocator, SecondLocator, DateFormatter
 from matplotlib.colors import LogNorm
@@ -35,8 +35,6 @@ nhead = 126 #a priori from transconvec_13
 d_bytes = 4 # a priori
 
 def read_tra(tcofn,tReq=None):
-    tcofn = expanduser(tcofn)
-
     head0 = readionoheader(tcofn, nhead)[0]
     ncol = head0['ncol']; n_alt = head0['nx']
 
@@ -51,13 +49,14 @@ def read_tra(tcofn,tReq=None):
     return iono,chi, pp
 
 def loopread(tcoutput,size_record,ncol,n_alt,size_head,size_data_record,tReq):
-    n_t = getsize(tcoutput)//size_record//d_bytes
+    tcoutput = Path(tcoutput).expanduser()
+    n_t = tcoutput.stat.st_size//size_record//d_bytes
 
     chi  = empty(n_t,dtype=float)
 
     # to use a panel, we must fill it with a dict of DataFrames--at least one dataframe to initialize
     ppd = {}; ionod = {}
-    with open(tcoutput,'rb') as f: #reset to beginning
+    with tcoutput.open('rb') as f: #reset to beginning
         for i in range(n_t):
             ionoi, chi[i], t, ppi = data_tra(f, size_record,ncol,n_alt,
                                                    size_head, size_data_record)
