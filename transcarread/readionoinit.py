@@ -133,7 +133,7 @@ def readionoheader(ifn, nhead):
     ifn = Path(ifn).expanduser() #not dupe, for those importing externally
     assert ifn.is_file()
 
-    with ifn.open('rb') as f: #python2 requires r to be first
+    with ifn.open('rb') as f:
         h = fromfile(f, float32, nhead)
 
     return parseionoheader(h), h
