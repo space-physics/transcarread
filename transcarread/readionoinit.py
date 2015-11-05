@@ -131,7 +131,6 @@ def writeinterpunformat(nx, rawi, hdraw, ofn):
 def readionoheader(ifn, nhead):
     """ reads BINARY transcar_output file """
     ifn = Path(ifn).expanduser() #not dupe, for those importing externally
-    assert ifn.is_file()
 
     with ifn.open('rb') as f:
         h = fromfile(f, float32, nhead)
