@@ -112,5 +112,3 @@ class SimpleSim():
         self.bg3fn = Path('precompute/BG3transmittance.h5')
         self.windowfn = Path('precompute/ixonWindowT.h5')
         self.qefn = Path('precompute/emccdQE.h5')
-        self.zenang = 12.5 #90-Bincl
-        self.obsalt_km=0.3
