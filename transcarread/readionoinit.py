@@ -132,7 +132,7 @@ def readionoheader(ifn, nhead):
     """ reads BINARY transcar_output file """
     ifn = Path(ifn).expanduser() #not dupe, for those importing externally
 
-    with ifn.open('rb') as f:
+    with open(str(ifn),'rb') as f: # XXX fallback for bug  in Numpy 1.10 with python 2.7. See pathlib2 Issue
         h = fromfile(f, float32, nhead)
 
     return parseionoheader(h), h
@@ -178,7 +178,8 @@ def readinitconddat(hd,fn):
 
     dextind += (49,) #as in output
 
-    with fn.open('rb') as f: #python2 requires r first
+    #XXX workaround for Numpy 1.10 on Python 2.7 bug with pathlib2
+    with open(str(fn),'rb') as f: #python2 requires r first  
         ipos = 2* ncol *d_bytes
         f.seek(ipos,0)
         rawall = fromfile(f,float32,nx*ncol).reshape((nx,ncol),order='C') #yes order='C'!
