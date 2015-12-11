@@ -56,7 +56,8 @@ def loopread(tcoutput,size_record,ncol,n_alt,size_head,size_data_record,tReq):
 
     # to use a panel, we must fill it with a dict of DataFrames--at least one dataframe to initialize
     ppd = {}; ionod = {}
-    with tcoutput.open('rb') as f: #reset to beginning
+    #XXX workaround for python 2.7 Numpy 1.10 pathlib2 bug
+    with open(str(tcoutput),'rb') as f: #reset to beginning
         for i in range(n_t):
             ionoi, chi[i], t, ppi = data_tra(f, size_record,ncol,n_alt,
                                                    size_head, size_data_record)
