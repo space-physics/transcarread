@@ -4,8 +4,7 @@ examples:
 ./test_readtra.py ~/code/transcar/out/ifort2/beam3915.4/dir.output/transcar_output
 
 """
-from __future__ import division,absolute_import
-from pathlib2 import Path
+from pathlib import Path
 from datetime import datetime
 from pytz import UTC
 from numpy.testing import assert_allclose

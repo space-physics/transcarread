@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-from __future__ import division,absolute_import
 import logging
-from pathlib2 import Path
+from pathlib import Path
 from numpy import asarray, s_, empty
 from datetime import datetime as dt
 from dateutil.relativedelta import relativedelta
