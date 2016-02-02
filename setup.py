@@ -11,8 +11,7 @@ setup(name='transcarread',
 	  long_description=long_description,
 	  author='Michael Hirsch',
 	  url='https://github.com/scienceopen/transcarread',
-	  install_requires=['gridaurora',
-                        'pathlib2>=2.1.0'],
+	  install_requires=['gridaurora']
       dependency_links = ['https://github.com/scienceopen/gridaurora/tarball/master#egg=gridaurora',],
       packages=['transcarread'],
 	  )
