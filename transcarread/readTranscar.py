@@ -1,5 +1,4 @@
-from __future__ import division,print_function,absolute_import
-from pathlib2 import Path
+from pathlib import Path
 import logging
 from numpy import s_
 from datetime import datetime

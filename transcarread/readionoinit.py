@@ -20,8 +20,7 @@ computes the state of the ionosphere for times t=0+{T1,T2,T3....Tn}.
 This output is stored in dir.output/transcar_output, which is read by
 read_tra.py in a similar manner to this code
 """
-from __future__ import division,absolute_import
-from pathlib2 import Path
+from pathlib import Path
 import logging
 from pandas import DataFrame
 from numpy import fromfile, float32, arange, asarray
@@ -132,7 +131,7 @@ def readionoheader(ifn, nhead):
     """ reads BINARY transcar_output file """
     ifn = Path(ifn).expanduser() #not dupe, for those importing externally
 
-    with open(str(ifn),'rb') as f: # XXX fallback for bug  in Numpy 1.10 with python 2.7. See pathlib2 Issue
+    with ifn.open('rb') as f:
         h = fromfile(f, float32, nhead)
 
     return parseionoheader(h), h
@@ -178,8 +177,7 @@ def readinitconddat(hd,fn):
 
     dextind += (49,) #as in output
 
-    #XXX workaround for Numpy 1.10 on Python 2.7 bug with pathlib2
-    with open(str(fn),'rb') as f: #python2 requires r first  
+    with fn.open('rb') as f: #python2 requires r first
         ipos = 2* ncol *d_bytes
         f.seek(ipos,0)
         rawall = fromfile(f,float32,nx*ncol).reshape((nx,ncol),order='C') #yes order='C'!
