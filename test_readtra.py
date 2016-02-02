@@ -4,8 +4,6 @@ examples:
 ./test_readtra.py ~/code/transcar/out/ifort2/beam3915.4/dir.output/transcar_output
 
 """
-from __future__ import division,absolute_import
-from six import string_types
 from dateutil.parser import parse
 from os.path import split, join
 from matplotlib.pyplot import show
@@ -26,7 +24,7 @@ def main(fn,tReq,verbose):
     datfn = join(split(split(fn)[0])[0],'dir.input/DATCAR')
     tctime = readTranscarInput(datfn)
 
-    if isinstance(tReq,string_types):
+    if isinstance(tReq,str):
         tReq = parse(tReq)
 
 #%% load transcar output
