@@ -7,7 +7,7 @@ examples:
 from pathlib import Path
 from datetime import datetime
 from pytz import UTC
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose,run_module_suite
 #
 from transcarread.read_tra import read_tra
 from transcarread.parseTranscar import readTranscarInput
@@ -39,5 +39,4 @@ def test_readtranscar():
     assert_allclose(tReqInd,0)
 
 if __name__=='__main__':
-    test_readtra()
-    test_readtranscar()
+    run_module_suite()

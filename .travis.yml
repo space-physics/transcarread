@@ -28,7 +28,6 @@ install:
 
 script:
     - coverage run test/test.py
-    - nosetests -v test/test.py
 
 after_success:
     - coveralls
