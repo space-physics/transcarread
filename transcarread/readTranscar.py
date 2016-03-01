@@ -85,6 +85,8 @@ class SimpleSim():
         self.loadverfn = Path('precompute/01Mar2011_FA.h5')
         self.opticalfilter = filt
         self.minbeamev = 0
+        self.obsalt_km=0
+        self.zenang=77.5
         #self.maxbeamev = #future
         self.transcarev = Path('~/code/transcar/transcar/BT_E1E2prev.csv')
 
