@@ -17,7 +17,7 @@ if __name__ == '__main__':
 
 
     infile ='emissions.dat'
-    sim = SimpleSim(p.filter,p.tcopath)
+    sim = SimpleSim(p.filter,p.tcopath,transcarutc=p.treq)
 #%% run sim
     if p.profile:
         import cProfile,pstats
