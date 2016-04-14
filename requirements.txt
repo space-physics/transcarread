@@ -4,7 +4,7 @@ six
 python-dateutil
 pytz
 numpy
-pandas
+xarray
 scipy
 matplotlib
 seaborn
