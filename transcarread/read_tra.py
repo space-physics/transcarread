@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from pathlib import Path
 from numpy import fromfile,float32, empty
-from pandas import DataFrame, Panel
+from xarray import DataArray
 from matplotlib.pyplot import figure
 from matplotlib.dates import MinuteLocator, SecondLocator, DateFormatter
 from matplotlib.colors import LogNorm
@@ -53,26 +53,21 @@ def loopread(tcoutput,size_record,ncol,n_alt,size_head,size_data_record,tReq):
 
     chi  = empty(n_t,dtype=float)
 
-    # to use a panel, we must fill it with a dict of DataFrames--at least one dataframe to initialize
-    ppd = {}; ionod = {}
+    plasmaparam = DataArray(data=empty(n_t,n_alt,4))
+    iono = DataArray(data=empty(n_t,n_alt,22))
 
     with tcoutput.open('rb') as f: #reset to beginning
         for i in range(n_t):
-            ionoi, chi[i], t, ppi = data_tra(f, size_record,ncol,n_alt,
+            iono[i,...], chi[i], t, plasmaparam[i,...] = data_tra(f, size_record,ncol,n_alt,
                                                    size_head, size_data_record)
-
-            ionod[t] = ionoi; ppd[t] = ppi
-
-    pp = Panel(ppd).transpose(2,1,0) # isr parameter x altitude x time
-    iono = Panel(ionod).transpose(2,1,0)
 #%% handle time request -- will return Dataframe if tReq, else returns Panel of all times
     if tReq is not None: #have to qualify this since picktime default gives last time as fallback
-        tUsed = picktime(pp.minor_axis.to_pydatetime(),tReq,None)[1]
+        tUsed = picktime(plasmaparam.time.to_pydatetime(),tReq,None)[1]
         if tUsed is not None: #remember old Python bug where datetime at midnight is False
-            iono = iono.loc[:,:,tUsed]
-            pp = pp.loc[:,:,tUsed]
+            iono = iono.loc[tUsed,...]
+            plasmaparam = plasmaparam.loc[tUsed,...]
 
-    return iono,chi,pp
+    return iono,chi,plasmaparam
 
 def data_tra(f, size_record, ncol, n_alt, nhead, size_data_record):
 #%% parse header
@@ -88,11 +83,12 @@ def data_tra(f, size_record, ncol, n_alt, nhead, size_data_record):
         dextind += (12,13,13,14,14,15,15,16,16)
     #n7=49 if ncol>49 else None
 
-    iono = DataFrame(data[:,dextind],
-                     index=data[:,0],
-                     columns=('n1','n2','n3','n4','n5','n6','n7',
-                        'v1','v2','v3','vm','ve',
-                        't1p','t1t','t2p','t2t','t3p','t3t','tmp','tmt','tep','tet'))
+    iono = DataArray(data[:,dextind],
+                     coords=[('alt_km',data[:,0]),
+                           ('isrparam',
+                            ['n1','n2','n3','n4','n5','n6','n7',
+                            'v1','v2','v3','vm','ve',
+                            't1p','t1t','t2p','t2t','t3p','t3t','tmp','tmt','tep','tet'])])
 #%% four ISR parameters
     """
     ion velocity from read_fluidmod.m

@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """ test readexcrates.py
 """
-from __future__ import division,absolute_import
 from transcarread.readExcrates import ExcitationRates,plotExcrates
-import seaborn
+import seaborn as sns
 
 #%% command line
 if __name__=='__main__':

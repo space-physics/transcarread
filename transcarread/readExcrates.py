@@ -5,7 +5,7 @@ from numpy import asarray, s_, empty
 from datetime import datetime as dt
 from dateutil.relativedelta import relativedelta
 from pytz import UTC
-from pandas import DataFrame, Panel
+from xarray import DataArray
 from matplotlib.pyplot import figure
 """
 Michael Hirsch 2014
@@ -41,12 +41,8 @@ def ExcitationRates(datadir,infile='emissions.dat'):
 def initparams(datadir,infile):
     kinfn =   (Path(datadir) / infile).expanduser()
 
-    try:
-        with kinfn.open('r') as fid: #going to rewind after this priming read
-            line = fid.readline()
-    except IOError as e:
-        logging.error('could not read/find file {}  due to {}'.format(kinfn,e))
-        return (None,)*8
+    with kinfn.open('r') as fid: #going to rewind after this priming read
+        line = fid.readline()
 
     ctime,dip,nalt,nen = getHeader(line)
 
@@ -71,7 +67,12 @@ def readexcrates(datadir,infile):
     n_t = dstream.size//size_record
 
     t = empty(n_t,dtype=dt)
-    excf = {}; pf = {}
+    excrate = DataArray(data=empty((n_t,nalt,10)),
+                        dims=['time','alt_km','reaction'])
+    excrate['reaction'] = ['no1d','no1s','noii2p','nn2a3','po3p3p','po3p5p', 'p1ng','pmein','p2pg','p1pg']
+
+    precip = DataArray(data=empty((n_t,nen,NprecipCol)),dims=['time','e','fluxdown'])
+
     for i in range(n_t):
         cind = s_[i*size_record:(i+1)*size_record]
         crec = dstream[cind]
@@ -82,17 +83,16 @@ def readexcrates(datadir,infile):
         p = crec[-Nprecip:].reshape((nen,NprecipCol),order='C')
 
         t[i] = parseheadtime(crec[:2])
-        excf[t[i].strftime('%Y-%m-%dT%H:%M:%S%Z')] = DataFrame(d[:,1:],
-                                   index=d[:,0],
-                                   columns=('no1d','no1s','noii2p','nn2a3',
-                                             'po3p3p','po3p5p',
-                                             'p1ng','pmein','p2pg','p1pg'))
 
-        pf[t[i].strftime('%Y-%m-%dT%H:%M:%S%Z')] = DataFrame(p,
-                                                      columns=('e','fluxdown'))
+        excrate[i,...]= d[:,1:]
 
-    excrate = Panel(excf).transpose(2,1,0) #turn dict of DataFrames into Panel, index is datetime
-    precip = Panel(pf) #dict to Panel, index is datetime
+        precip[i,...] = p
+
+    excrate['alt_km'] = d[:,0]
+    excrate['time'] = t
+
+    precip['time'] = t
+
     return excrate, dipangle, precip, t
 
 def getHeader(line):
@@ -117,21 +117,21 @@ def parseheadtime(h):
 
 #%% plotting
 def plotExcrates(spec,tReq=None):
-    if isinstance(spec,Panel) and isinstance(tReq,dt):
-        spec = spec.loc[:,:,tReq]
-    elif isinstance(spec,Panel):
-        spec = spec.iloc[:,:,-1]
-    elif isinstance(spec,DataFrame):
+    if spec.ndim==3 and isinstance(tReq,dt):
+        spec = spec.loc[tReq,...]
+    elif spec.ndim==3:
+        spec = spec[-1,...]
+    elif spec.ndim==2:
         pass
     else:
         return
 
     ax = figure().gca()
-    ax.plot(spec.values,spec.index)
+    ax.plot(spec.values,spec.alt_km)
     ax.set_xscale('log')
     ax.set_xlim(left=1e-4)
     ax.set_xlabel('Excitation')
     ax.set_ylabel('altitude [km]')
     ax.set_title('excitation rates')
-    ax.legend(spec.columns)
+    ax.legend(spec.reaction.values)
     ax.grid(True)
