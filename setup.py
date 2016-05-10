@@ -12,7 +12,7 @@ except Exception as e:
 
 with open('README.rst','r') as f:
 	long_description = f.read()
-	
+
 setup(name='transcarread',
       version='0.1',
 	  description='Reading utilities for output of TRANSCAR 1-D aeronomy model',
