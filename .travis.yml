@@ -23,7 +23,6 @@ install:
     - conda create --yes -n test python=$TRAVIS_PYTHON_VERSION
     - source activate test
     - pip -q install coveralls
-    - conda install --quiet --yes --file requirements.txt
     - python setup.py develop
 
 script:
