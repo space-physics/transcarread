@@ -1,5 +1,5 @@
-#!/usr/bin/env python3
-from pathlib import Path
+#!/usr/bin/env python
+from . import Path
 from datetime import datetime as dt
 from dateutil.relativedelta import relativedelta
 from pytz import UTC
