@@ -1,5 +1,5 @@
-#!/usr/bin/env python3
-from pathlib import Path
+#!/usr/bin/env python
+from . import Path
 from numpy import fromfile,float32, empty
 from xarray import DataArray
 from matplotlib.pyplot import figure
