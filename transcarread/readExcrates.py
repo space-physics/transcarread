@@ -27,8 +27,8 @@ NprecipCol: 2, this accounts for e and fluxdown (each taking one column)
 NdataCol: number of data elements per altitude + 1
 NumData: number of data elements to read at this time step
 """
-NumPerRow = 5 #FIXME I think this is true (!)
-NdataCol = 11 #FIXME assuming this is always true (seems likely)
+NumPerRow = 5 
+NdataCol = 11 
 NprecipCol = 2
 
 
