@@ -9,10 +9,11 @@ def compplasmaparam(iono,approx):
                            ('isrparam',['ne','vi','Ti','Te'])]
                    )
 
-    nm = iono[['n4','n5','n6']].sum(axis=1)
+    nm = iono.sel(isrparam=['n4','n5','n6']).sum(dim='isrparam')
 
     pp.loc[:,'ne'] = comp_ne(iono)
-    pp.loc[:'vi'] = comp_vi(iono,nm,pp)
+#    pp.sel(isrparam='ne') = comp_ne(iono) # doesn't work for assign?
+    pp.loc[:,'vi'] = comp_vi(iono,nm,pp)
     pp.loc[:,'Ti'] = comp_Ti(iono,nm,pp)
     pp.loc[:,'Te'] = comp_Te(iono,approx)
     return pp

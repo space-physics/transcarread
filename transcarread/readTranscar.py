@@ -1,6 +1,5 @@
 from . import Path
 import logging
-from numpy import s_
 from datetime import datetime
 from dateutil.parser import parse
 #
@@ -61,17 +60,9 @@ def picktime(tTC,tReq,beamEnergy):
         tReqInd = find_nearest(tTC,tReq)[0]
     except TypeError as e:
         logging.error('using last time in place of requested time for beam {}  {}'.format(beamEnergy,e))
-        tReqInd = s_[-1]
+        tReqInd = -1
 
-    try:
-        tUsed = tTC[tReqInd]
-    except (TypeError,IndexError) as e:
-        logging.error('using last time in place of requested time for beam {}  {}'.format(beamEnergy,e))
-        try:
-            tUsed = tTC[-1]
-        except TypeError as e:
-            logging.critical('failed to find any usable time, simulation error likely.  {}'.format(e))
-            tUsed=None
+    tUsed = tTC[tReqInd]
 
     return tReqInd,tUsed
 
@@ -80,7 +71,7 @@ class SimpleSim():
     """
     simple input for debugging/self test
     """
-    def __init__(self,filt,inpath,reacreq=None,lambminmax=None,transcarutc=''):
+    def __init__(self,filt,inpath,reacreq=None,lambminmax=None,transcarutc=None):
         self.loadver = False
         self.loadverfn = Path('precompute/01Mar2011_FA.h5')
         self.opticalfilter = filt
@@ -94,11 +85,11 @@ class SimpleSim():
         self.transcarpath = inpath
         self.transcarconfig = 'DATCAR'
 
-        if isinstance(transcarutc,datetime):
-            self.transcarutc=transcarutc
+        if isinstance(transcarutc,str):
+            self.transcarutc = parse(transcarutc)
         else:
-            self.transcarutc=parse(transcarutc)
-
+            self.transcarutc = transcarutc
+ 
         if reacreq is None:
             self.reacreq = ['metastable','atomic','n21ng','n2meinel','n22pg','n21pg']
         else:
