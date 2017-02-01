@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from . import Path
+from pathlib import Path
 from datetime import datetime
 from numpy import fromfile,float32, empty
 from xarray import DataArray

@@ -1,11 +1,11 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 examples:
 ./test_readtra.py ~/code/transcar/out/ifort2/beam3915.4/dir.output/transcar_output
 
 """
 from dateutil.parser import parse
-from os.path import split, join
+from pathlib import Path
 from matplotlib.pyplot import show
 from matplotlib.ticker import ScalarFormatter#,LogFormatter,LogFormatterMathtext #for 1e4 -> 1 x 10^4, applied DIRECTLY in format=
 #from matplotlib.ticker import MultipleLocator
@@ -21,7 +21,7 @@ sfmt=ScalarFormatter()
 
 def main(fn,tReq,verbose):
 #%% get sim parameters
-    datfn = join(split(split(fn)[0])[0],'dir.input/DATCAR')
+    datfn = Path(fn).parents[1]/'dir.input/DATCAR'
     tctime = readTranscarInput(datfn)
 
     if isinstance(tReq,str):

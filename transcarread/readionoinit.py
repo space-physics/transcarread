@@ -20,7 +20,7 @@ computes the state of the ionosphere for times t=0+{T1,T2,T3....Tn}.
 This output is stored in dir.output/transcar_output, which is read by
 read_tra.py in a similar manner to this code
 """
-from . import Path
+from pathlib import Path
 import logging
 from pandas import DataFrame
 from numpy import fromfile, float32, arange, asarray

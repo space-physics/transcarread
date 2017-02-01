@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import logging
-from . import Path
+from pathlib import Path
 from numpy import asarray, s_, empty
 from datetime import datetime as dt
 from dateutil.relativedelta import relativedelta
