@@ -5,7 +5,7 @@ from dateutil.parser import parse
 #
 from .readExcrates import ExcitationRates
 from .parseTranscar import readTranscarInput
-from histutils.findnearest import find_nearest
+from sciencedates import find_nearest
 #
 '''
 calcVERtc is the function called by "hist-feasibility" to get Transcar modeled VER/flux
