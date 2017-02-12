@@ -14,7 +14,4 @@ setup(name='transcarread',
       'Topic :: Scientific/Engineering :: Atmospheric Science',
       'Programming Language :: Python :: 3.6',
 	  ],
-      dependency_links = [
-      'https://github.com/scienceopen/gridaurora/tarball/master#egg=gridaurora',
-      ],
 	  )
