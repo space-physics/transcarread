@@ -1,19 +1,13 @@
 #!/usr/bin/env python
 from setuptools import setup
 
-try:
-    import conda.cli
-    conda.cli.main('install','--file','requirements.txt')
-except Exception as e:
-    print(e)
-    import pip
-    pip.main(['install','-r','requirements.txt'])
+req = ['nose','python-dateutil','pytz','numpy','xarray','scipy','matplotlib','seaborn',
+        'gridaurora','sciencedates']
 
 
 setup(name='transcarread',
       packages=['transcarread'],
-	  install_requires=['gridaurora',
-	                    'sciencedates'],
+	  install_requires=req,
 	  classifiers=[
       'Intended Audience :: Science/Research',
       'Development Status :: 4 - Beta',
