@@ -1,13 +1,19 @@
 #!/usr/bin/env python
+req = ['nose','python-dateutil','pytz','numpy','xarray','scipy','matplotlib','seaborn',]
+pipreq=['gridaurora','sciencedates']
+
+import pip
+try:
+    import conda.cli
+    conda.cli.main('install',*req)
+except Exception as e:
+    pip.main(['install'] + req)
+pip.main(['install'] + pipreq)
+# %%
 from setuptools import setup
-
-req = ['nose','python-dateutil','pytz','numpy','xarray','scipy','matplotlib','seaborn',
-        'gridaurora','sciencedates']
-
 
 setup(name='transcarread',
       packages=['transcarread'],
-	  install_requires=req,
 	  classifiers=[
       'Intended Audience :: Science/Research',
       'Development Status :: 4 - Beta',

@@ -10,8 +10,8 @@ from matplotlib.pyplot import show
 from matplotlib.ticker import ScalarFormatter#,LogFormatter,LogFormatterMathtext #for 1e4 -> 1 x 10^4, applied DIRECTLY in format=
 #from matplotlib.ticker import MultipleLocator
 #
-from transcarread.read_tra import read_tra,doPlot
-from transcarread.parseTranscar import readTranscarInput
+from transcarread.plots import plotisr
+from transcarread import readTranscarInput,read_tra
 #
 sfmt=ScalarFormatter()
 #    sfmt = LogFormatter()
@@ -31,7 +31,7 @@ def main(fn,tReq,verbose):
     iono,chi, pp = read_tra(fn,tReq)
 #%% do plot
     t = pp.time
-    doPlot(t,iono,pp, fn, 'cubehelix',tctime,sfmt,verbose)
+    plotisr(t,iono,pp, fn, 'cubehelix',tctime,sfmt,verbose)
 
     #doplot1d(t,chi,'$\chi$',sfmt,fn, tctime)
 

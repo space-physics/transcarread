@@ -1,7 +1,8 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """ test readexcrates.py
 """
-from transcarread.readExcrates import ExcitationRates,plotExcrates
+from transcarread import ExcitationRates
+from transcarread.plots import plotExcrates
 import seaborn as sns
 
 #%% command line

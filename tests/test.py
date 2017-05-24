@@ -9,9 +9,7 @@ from datetime import datetime
 from pytz import UTC
 from numpy.testing import assert_allclose,run_module_suite
 #
-from transcarread.read_tra import read_tra
-from transcarread.parseTranscar import readTranscarInput
-from transcarread.readTranscar import calcVERtc,SimpleSim
+from transcarread import readTranscarInput, calcVERtc,SimpleSim,read_tra
 
 tdir  = Path(__file__).parent
 

@@ -1,5 +1,5 @@
-#!/usr/bin/env python3
-from transcarread.readTranscar import calcVERtc,SimpleSim
+#!/usr/bin/env python
+from transcarread import calcVERtc,SimpleSim
 from dateutil.parser import parse
 #%% main (sanity test with hard coded values)
 if __name__ == '__main__':
