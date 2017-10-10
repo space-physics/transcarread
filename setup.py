@@ -14,10 +14,12 @@ from setuptools import setup
 
 setup(name='transcarread',
       packages=['transcarread'],
+      author='Michael Hirsch, Ph.D.',
+      url='https://github.com/scivision/transcarrread',
 	  classifiers=[
       'Intended Audience :: Science/Research',
       'Development Status :: 4 - Beta',
       'Topic :: Scientific/Engineering :: Atmospheric Science',
-      'Programming Language :: Python :: 3.6',
+      'Programming Language :: Python :: 3',
 	  ],
 	  )

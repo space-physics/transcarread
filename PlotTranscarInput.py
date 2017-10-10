@@ -1,5 +1,9 @@
 #!/usr/bin/env python
-from matplotlib.pyplot import figure,show, subplots
+"""
+Reads Transcar inputs and MSIS90 and plots interpolated result that would 
+normally go into Transcar.
+"""
+from matplotlib.pyplot import show
 #
 from transcarread import readmsis
 from transcarread.plots import plotionoinit

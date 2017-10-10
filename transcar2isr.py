@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 """
+Reads output of Transcar sim, yielding Incoherent Scatter Radar plasma parameters.
+
 examples:
-./test_readtra.py ~/code/transcar/out/ifort2/beam3915.4/dir.output/transcar_output
+./test_readtra.py ~/data/beam3915.4/dir.output/transcar_output
 
 """
 from dateutil.parser import parse

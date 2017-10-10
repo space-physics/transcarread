@@ -5,7 +5,7 @@ from dateutil.parser import parse
 if __name__ == '__main__':
 
     from argparse import ArgumentParser
-    p = ArgumentParser(description='analyzes HST data and makes simulations')
+    p = ArgumentParser(description='Makes auroral emissions based on transcar sim')
     p.add_argument('path',help='root path that beam directories live in')
     p.add_argument('-e','--energy',help='energy of this beam [eV]',default=52.726,type=float)
     p.add_argument('-t','--treq',help='date/time  YYYY-MM-DDTHH-MM-SS',default='2013-03-31T09:00:30Z')
