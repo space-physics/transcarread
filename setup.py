@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-req = ['nose','python-dateutil','pytz','numpy','xarray','scipy','matplotlib','seaborn',]
+req = ['nose','python-dateutil', 'pytz','numpy','xarray', 'scipy', 'matplotlib','seaborn',]
 pipreq=['gridaurora','sciencedates']
 
 import pip
@@ -22,4 +22,5 @@ setup(name='transcarread',
       'Topic :: Scientific/Engineering :: Atmospheric Science',
       'Programming Language :: Python :: 3',
 	  ],
+	  install_requires=req+pipreq,
 	  )
