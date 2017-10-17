@@ -4,7 +4,7 @@ os:
   - linux
   - osx
   
-env: TRAVIS_PYTHON_VERSION=3.6
+env: TRAVIS_PYTHON_VERSION=3.6  FC=gfortran-6
 
 notifications:
   email: false
@@ -14,8 +14,10 @@ git:
 
 addons:
   apt:
+    sources:
+      - ubuntu-toolchain-r-test
     packages:
-      - gfortran
+      - gfortran-6
 
 before_install:
     - if [[ $TRAVIS_OS_NAME == osx ]]; then
