@@ -127,11 +127,11 @@ def plotExcrates(spec,tReq=None):
         return
 
     ax = figure().gca()
-    ax.plot(spec.values,spec.alt_km)
+    ax.plot(spec.values, spec.alt_km)
     ax.set_xscale('log')
     ax.set_xlim(left=1e-4)
     ax.set_xlabel('Excitation')
     ax.set_ylabel('altitude [km]')
-    ax.set_title('excitation rates')
+    ax.set_title(f'excitation rates: {spec.name} eV')
     ax.legend(spec.reaction.values)
     ax.grid(True)
