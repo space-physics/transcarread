@@ -30,7 +30,7 @@ def test_readtra():
 def test_readtranscar():
     tReq = datetime(2013,3,31,9,0,21,tzinfo=UTC)
     sim = SimpleSim('bg3', tdir/'data/beam52.726/dir.output')
-    excrates, tUsed, tReqInd = calcVERtc('emissions.dat',tdir/'data',52.726,tReq,sim)
+    excrates, tUsed, tReqInd = calcVERtc('dir.output/emissions.dat',tdir/'data',52.726,tReq,sim)
 #%%
     assert_allclose(excrates.sel(reaction='no1d')[0,53],15638.620000000001)
     assert tUsed==datetime(2013, 3, 31, 9, 0, 42, tzinfo=UTC)

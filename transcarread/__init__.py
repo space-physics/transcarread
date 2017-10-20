@@ -299,7 +299,7 @@ def readinitconddat(hd,fn):
     return msis,rawall
 
 #%% read transcar
-def calcVERtc(infile,datadir,beamEnergy,tReq,sim):
+def calcVERtc(kinfn:Path,datadir:Path, beamEnergy, tReq, sim):
     '''
     calcVERtc is the function called by "hist-feasibility" to get Transcar modeled VER/flux
 
@@ -311,7 +311,7 @@ def calcVERtc(infile,datadir,beamEnergy,tReq,sim):
 
     References include:
     Zettergren, M. "Model-based optical and radar remote sensing of transport and composition in the auroral ionosphere" PhD Thesis, Boston Univ., 2009
-    Zettergren, M. et al "Optical estimation of auroral ion upflow: 2. A case study" JGR Vol 113 A7  2008 DOI:10.1029/2007JA012691
+    Zettergren, M. et al "Optical estimation of aurinfileinfileoral ion upflow: 2. A case study" JGR Vol 113 A7  2008 DOI:10.1029/2007JA012691
     Zettergren, M. et al "Optical estimation of auroral ion upflow: Theory"          JGR Vol 112 A12 2007 DOI: 10.1029/2007JA012691
 
     Tested with:
@@ -323,7 +323,7 @@ def calcVERtc(infile,datadir,beamEnergy,tReq,sim):
     yielding Peigen, a ver eigenprofile p(z,E) for that particular energy
     '''
 #%% get beam directory
-    beamdir = Path(datadir) / 'beam{}'.format(beamEnergy)
+    beamdir = Path(datadir) / f'beam{beamEnergy}'
     logging.debug(beamEnergy)
 #%% read simulation parameters
     tctime = readTranscarInput(beamdir/'dir.input'/sim.transcarconfig)
@@ -332,15 +332,15 @@ def calcVERtc(infile,datadir,beamEnergy,tReq,sim):
 
     try:
       if not tctime['tstartPrecip'] < tReq < tctime['tendPrecip']:
-        logging.info('precip start/end: {} / {}'.format(tctime['tstartPrecip'],tctime['tendPrecip']) )
-        logging.error('your requested time {} is outside the precipitation time'.format(tReq))
+        logging.info(f'precip start/end: {tctime["tstartPrecip"]} / {tctime["tendPrecip"]}' )
+        logging.error(f'your requested time {tReq} is outside the precipitation time')
         tReq = tctime['tendPrecip']
-        logging.warning('falling back to using the end simulation time: {}'.format(tReq))
+        logging.warning(f'falling back to using the end simulation time: {tReq}')
     except TypeError as e:
         tReq=None
-        logging.error('problem with requested time : {} beam {}  {}'.format(tReq,beamEnergy,e))
+        logging.error(f'problem with requested time : {tReq} beam {beamEnergy}  {e}')
 #%% convert transcar output
-    spec, tTC, dipangle = ExcitationRates(beamdir,infile)
+    spec, tTC, dipangle = ExcitationRates(beamdir/kinfn)
 
     tReqInd,tUsed = picktime(tTC,tReq,beamEnergy)
 
@@ -368,7 +368,7 @@ class SimpleSim():
         #self.maxbeamev = #future
         self.transcarev = Path('~/code/transcar/transcar/BT_E1E2prev.csv')
 
-        self.excratesfn = 'emissions.dat'
+        self.excratesfn = 'dir.output/emissions.dat'
         self.transcarpath = inpath
         self.transcarconfig = 'DATCAR'
 
@@ -448,7 +448,7 @@ def comp_Te(d,approx):
     return Te
 # %%
 
-def ExcitationRates(datadir,infile='emissions.dat'):
+def ExcitationRates(kinfn:Path):
     """
     Michael Hirsch 2014
     Parses the ASCII dir.output/emissions.dat in milliseconds
@@ -469,13 +469,13 @@ def ExcitationRates(datadir,infile='emissions.dat'):
     NdataCol: number of data elements per altitude + 1
     NumData: number of data elements to read at this time step
     """
-    excrate, dipangle, precip, t = readexcrates(Path(datadir)/'dir.output', infile)
+    excrate, dipangle, precip, t = readexcrates(kinfn)
     # breakup slightly to meet needs of simpler external programs
     #z = excite.major_axis.values
     return excrate, t, dipangle
 
-def initparams(datadir,infile):
-    kinfn =   (Path(datadir) / infile).expanduser()
+def initparams(kinfn:Path):
+    kinfn = Path(kinfn).expanduser()
 
     with kinfn.open('r') as fid: #going to rewind after this priming read
         line = fid.readline()
@@ -487,12 +487,12 @@ def initparams(datadir,infile):
     # how many rows of data (less header) to read in a batch
     ndatrow = (ndat + Nprecip)//NumPerRow  + 1
 
-    logging.debug('{} {} Nalt: {} nen: {} dipangle[deg]: {:.2f}'.format(kinfn,ctime,nalt,nen,dip))
+    logging.debug(f'{kinfn} {ctime} Nalt: {nalt} nen: {nen} dipangle[deg]: {dip:.2f}')
 
     return kinfn,nalt,nen,dip,ctime,ndatrow,ndat,Nprecip
 
-def readexcrates(datadir,infile):
-    kinfn,nalt,nen,dipangle,ctime,ndatrow,ndat,Nprecip = initparams(datadir,infile)
+def readexcrates(kinfn):
+    kinfn,nalt,nen,dipangle,ctime,ndatrow,ndat,Nprecip = initparams(kinfn)
     #using read_csv was vastly slower!
 
     with kinfn.open('r') as f:
