@@ -16,6 +16,7 @@ setup(name='transcarread',
       packages=['transcarread'],
       author='Michael Hirsch, Ph.D.',
       url='https://github.com/scivision/transcarrread',
+      version='1.0.0',
 	  classifiers=[
       'Intended Audience :: Science/Research',
       'Development Status :: 4 - Beta',
