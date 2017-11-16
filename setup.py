@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-req = ['nose','python-dateutil', 'pytz','numpy','xarray', 'scipy', 'matplotlib','seaborn',
+req = ['nose','python-dateutil', 'pytz','numpy','xarray', 'scipy',
        'gridaurora','sciencedates']
 # %%
 from setuptools import setup
@@ -17,4 +17,5 @@ setup(name='transcarread',
 	  ],
 	  install_requires=req,
 	  python_requires='>=3.6',
+      extras_require={'plot':['matplotlib','seaborn'],},
 	  )
