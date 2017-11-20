@@ -2,10 +2,10 @@
 req = ['nose','python-dateutil', 'pytz','numpy','xarray', 'scipy',
        'gridaurora','sciencedates']
 # %%
-from setuptools import setup
+from setuptools import setup,find_packages
 
 setup(name='transcarread',
-      packages=['transcarread'],
+      packages=find_packages(),
       author='Michael Hirsch, Ph.D.',
       url='https://github.com/scivision/transcarrread',
       version='1.0.0',
