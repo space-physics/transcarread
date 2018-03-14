@@ -1,6 +1,7 @@
 from datetime import datetime
 from pathlib import Path
 import xarray
+import logging
 from matplotlib.pyplot import figure
 from matplotlib.dates import DateFormatter,MinuteLocator, SecondLocator
 from matplotlib.colors import LogNorm
@@ -22,19 +23,20 @@ def timelbl(time,ax,tctime):
     ax.axvline(tctime['tendPrecip'], color='red', linestyle='--',label='Precip. End')
 
 
-def plotisr(iono:xarray.DataArray, pp:xarray.DataArray, infile:Path, tctime:dict,
+def plotisr(iono:xarray.Dataset, infile:Path, tctime:dict,
             cmap:str=None, sfmt=None, verbose:bool=False):
     """Plot Transcar ISR parameters"""
-    t = pp.time
+    t = iono.time
     if t.size<2:  # need at least 2 times for pcolormesh
+        logging.error('unable to plot with less than 2 time steps')
         return
 
     alt = iono.alt_km
 #%% ISR plasma parameters
     for p,cn in zip(ISRPARAM,(LogNorm(),None,None,None)):
-        _plot1d(pp.sel(isrparam=p).values,alt,p,sfmt,infile,tctime)
+        _plot1d(iono['pp'].loc[:,p], alt, p, sfmt, infile, tctime)
         fg =  figure(); ax = fg.gca()
-        pcm = ax.pcolormesh(alt,t, pp.sel(isrparam=p).values, cmap = cmap, norm=cn)
+        pcm = ax.pcolormesh(alt, t, iono['pp'].loc[:,p], cmap = cmap, norm=cn)
         _tplot(t,tctime,fg,ax,pcm,sfmt,p,infile)
 #%% ionosphere state parameters
     if verbose>0:

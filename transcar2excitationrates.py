@@ -14,7 +14,6 @@ if __name__=='__main__':
     p = ArgumentParser(description='Read Transcar excitation rates')
     p.add_argument('--emisfn',help='emissions.dat filename',default='dir.output/emissions.dat')
     p.add_argument('path',help='path where dir.output/emissions.dat is')
-    p.add_argument('--profile',help='profile performance',action='store_true')
     p = p.parse_args()
 
     path = Path(p.path).expanduser()

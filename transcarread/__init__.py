@@ -3,6 +3,7 @@ from pathlib import Path
 from datetime import datetime
 import numpy as np
 from scipy.interpolate import interp1d
+from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
 from pytz import UTC
 import xarray
@@ -57,9 +58,9 @@ def read_tra(tcofn:Path, tReq:datetime=None):
 
     assert hd['size_head'] == nhead
 #%% read data based on header
-    iono,chi,pp = loopread(tcofn, hd, tReq)
+    iono = loopread(tcofn, hd, tReq)
 
-    return iono,chi, pp
+    return iono
 
 
 def loopread(tcofn:Path, hd:dict, tReq:datetime):
@@ -73,10 +74,9 @@ def loopread(tcofn:Path, hd:dict, tReq:datetime):
     iono = xarray.concat(iono, 'time')
 #%% handle time request -- will return Dataframe if tReq, else returns Panel of all times
     if tReq is not None: # have to qualify this since picktime default gives last time as fallback
-        tUsedInd = picktime(iono.time, tReq)[0]
+        tUsedInd = picktime(iono.time.values, tReq)[0]
         if tUsedInd is not None: # in case ind is 0
-            iono['iono'] = iono['iono'][tUsedInd,...]
-            iono['pp'] = iono['pp'][tUsedInd,...]
+            iono = iono.isel(time=tUsedInd)
 
     return iono
 
@@ -142,7 +142,7 @@ def getaltgrid(ifn):
     hd = readionoheader(ifn,nhead)[0]
     msis,raw = readinitconddat(hd,ifn) #index is altitude (km)
 
-    return msis.index.values
+    return msis.alt_km
 
 
 def interpdat(md:xarray.DataArray, dz, raw:np.ndarray, newaltmethod:str):
@@ -184,22 +184,22 @@ def interpdat(md:xarray.DataArray, dz, raw:np.ndarray, newaltmethod:str):
         fint = interp1d(md.index, md[m], kind='linear',axis=0)
         mint.loc[:,m] = fint(z_new)
 #%% new header, only change to number of altitudes
-    hdint = hd
+    hdint = md.attrs['hd']
     hdint['nx'] = z_new.size
 #%% raw data, we'll write this to disk later
     fint = interp1d(md.index, raw, kind='linear', axis=0)
     rawint = fint(z_new)
 #%% interpolate derived parameters
-    ppint = xarray.DataArray(np.empty((z_new.size, pp.shape[1])),
+    ppint = xarray.DataArray(np.empty((z_new.size, md['pp'].shape[1])),
                              dims=['alt_km','isrparam'],
                             coords={'alt_km':z_new,
-                                    'isrparam':pp.coords['isrparam']})
-    for p in pp:
-        fint = interp1d(pp.alt_km, pp.loc[:,p], kind='linear', axis=0)
+                                    'isrparam':md.coords['isrparam']})
+    for p in md['pp']:
+        fint = interp1d(md['pp'].alt_km, md['pp'].loc[:,p], kind='linear', axis=0)
         ppint.loc[:,p] = fint(z_new)
 
 
-    iono = xarray.Dataset({'md':mint,'pp':ppint},attrs={'hd':hd})
+    iono = xarray.Dataset({'md':mint,'pp':ppint},attrs={'hd':hdint})
 
     return iono, rawint
 
@@ -358,15 +358,22 @@ def calcVERtc(kinfn:Path,datadir:Path, beamEnergy:float, tReq:datetime, sim):
 #%% convert transcar output
     rates = ExcitationRates(beamdir/kinfn)
 
-    tReqInd,tUsed = picktime(rates.time,tReq)
+    tReqInd,tUsed = picktime(rates.time.values, tReq)
 
-    rates.attrs['tReqInd'] = tReqInd
-    rates.attrs['tUsed'] = tUsed
+    rates = rates[tReqInd,...]
 
     return rates
 
 
 def picktime(tTC,tReq):
+    #tReq = np.datetime64(tReq)
+    if isinstance(tTC[0], np.datetime64):
+       tReq = np.datetime64(tReq)
+       tTC = tTC.astype(np.datetime64)
+    elif isinstance(tTC[0], datetime):
+         if isinstance(tReq,str):
+            tReq = parse(tReq)
+
     tReqInd = find_nearest(tTC,tReq)[0]
 
     tUsed = tTC[tReqInd]

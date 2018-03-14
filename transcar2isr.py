@@ -27,11 +27,10 @@ def main(fn,tReq,verbose):
 #%% load transcar output
     iono = tr.read_tra(fn,tReq)
 #%% do plot
-    plots.plotisr(iono,pp, fn, 'cubehelix',tctime,sfmt,verbose)
+    plots.plotisr(iono, fn, 'cubehelix',tctime,sfmt,verbose)
 
-    #doplot1d(t,chi,'$\chi$',sfmt,fn, tctime)
+    return iono,tctime
 
-    return iono,chi,pp,t,tctime
 
 if __name__=='__main__':
     from argparse import ArgumentParser
@@ -45,6 +44,6 @@ if __name__=='__main__':
 
     doplot = not p.noplot
 
-    iono,chi,pp,t,tctime = main(p.tofn,p.tReq,p.verbose)
+    iono,tctime = main(p.tofn,p.tReq,p.verbose)
 
     show()

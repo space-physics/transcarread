@@ -23,4 +23,4 @@ if __name__ == '__main__':
 
     sim = tr.SimpleSim(p.filter,p.tcopath,transcarutc=p.treq)
 #%% run sim
-    rates, tUsed, tReqInd = tr.calcVERtc(kinfn,p.path,p.energy,parse(p.treq),sim)
+    rates= tr.calcVERtc(kinfn,p.path,p.energy,parse(p.treq),sim)
