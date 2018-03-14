@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 """ test readexcrates.py
+
+python transcar2excitationrates.py tests/data/beam52
 """
 from pathlib import Path
 from transcarread import ExcitationRates
@@ -17,14 +19,14 @@ if __name__=='__main__':
 
     path = Path(p.path).expanduser()
 
-    if path.stem.startswith('beam'):
+    if path.stem.startswith('beam'):  # specific beam
         dlist = [path]
-    else:
+    else:  # overall simulation
         dlist = [d for d in path.iterdir() if d.is_dir()]
 
     for d in dlist:
-        spec = ExcitationRates(d/p.emisfn)
-        spec.name = d.name[4:]
-        plotExcrates(spec)
+        rates = ExcitationRates(d/p.emisfn)
+        rates.name = d.name[4:]
+        plotExcrates(rates)
 
     show()

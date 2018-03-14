@@ -129,22 +129,23 @@ def plotisrparam(pp:xarray.DataArray, zlim:tuple=None):
     fg.subplots_adjust(wspace=0.075) #brings subplots horizontally closer
 
 
-def plotExcrates(spec,tReq=None):
-    if spec.ndim==3 and isinstance(tReq,datetime):
-        spec = spec.loc[tReq,...]
-    elif spec.ndim==3:
-        spec = spec[-1,...]
-    elif spec.ndim==2:
+def plotExcrates(rates:xarray.DataArray, tReq:datetime=None):
+    if rates.ndim==3 and isinstance(tReq,datetime):
+        rates = rates.loc[tReq,...]
+    elif rates.ndim==3:
+        rates = rates[-1,...]
+        print('used last time',rates.time)
+    elif rates.ndim==2:
         pass
     else:
         return
 
     ax = figure().gca()
-    ax.plot(spec.values, spec.alt_km)
+    ax.plot(rates, rates.alt_km)
     ax.set_xscale('log')
     ax.set_xlim(left=1e-4)
     ax.set_xlabel('Excitation')
     ax.set_ylabel('altitude [km]')
-    ax.set_title(f'excitation rates: {spec.name} eV')
-    ax.legend(spec.reaction.values)
+    ax.set_title(f'excitation rates: {rates.name} eV')
+    ax.legend(rates.reaction.values)
     ax.grid(True)
