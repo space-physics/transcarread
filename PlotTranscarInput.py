@@ -22,11 +22,14 @@ if __name__ == '__main__':
     p.add_argument('-m','--newaltmethod',help='method of generating new altitude cell locations [linear, incr]',default='linear')
     p = p.parse_args()
 
-    msisi,hdi,ppi = tr.readmsis(p.infn, p.outfn, p.dz, p.newaltmethod)
+    msis = tr.readmsis(p.infn, p.outfn, p.dz, p.newaltmethod)
 
-    print('initial conditions from', hdi['htime'],'at lat,lon',hdi['latgeo'],hdi['longeo'])
-    print(f'nx={hdi["nx"]:0d}  from {msisi.alt_km[0].item():0.1f} km to {msisi.alt_km[-1].item():0.1f}  km.')
+    hd = msis.attrs['hd']
 
-    plots.plotionoinit(msisi, hdi)
-    plots.plotisrparam(ppi)
+    print('initial conditions from', hd['htime'],'at lat,lon',hd['latgeo'],hd['longeo'])
+    print(f'nx={hd["nx"]:0d}  from {msis.alt_km[0].item():0.1f} km to {msis.alt_km[-1].item():0.1f}  km.')
+
+    plots.plotionoinit(msis['msis'])
+    plots.plotisrparam(msis['pp'])
+
     show()

@@ -42,7 +42,7 @@ def test_readtranscar():
 
 
 def test_readmsis():
-    msisi,hdi,ppi = tr.readmsis(infn)
+    msis = tr.readmsis(infn)
 
 
 if __name__=='__main__':

@@ -66,28 +66,19 @@ def loopread(tcofn:Path, hd:dict, tReq:datetime):
     tcoutput = Path(tcofn).expanduser()
     n_t = tcoutput.stat().st_size // hd['size_record'] // d_bytes
 
-    chi  = np.empty(n_t, float)
-    t =    np.empty(n_t, datetime)
-
-    plasmaparam = xarray.DataArray(data= np.empty((n_t,hd['nx'],4)),
-                                   dims=['time','alt_km','isrparam'])
-    iono = xarray.DataArray(data=np.empty((n_t, hd['nx'],22)),
-                     dims=['time','alt_km','param'])
-
+    iono = []
     with tcoutput.open('rb') as f: #reset to beginning
         for i in range(n_t):
-            iono[i,...], chi[i], t[i], alt, plasmaparam[i,...] = data_tra(f, hd)
-        # FIXME isn't there a way to inherit coordinates like Pandas?
-        iono = iono.assign_coords(time=t,param=PARAM,alt_km=alt)
-        plasmaparam = plasmaparam.assign_coords(time=t,isrparam=ISRPARAM,alt_km=alt)
+            iono.append(data_tra(f, hd))
+    iono = xarray.concat(iono, 'time')
 #%% handle time request -- will return Dataframe if tReq, else returns Panel of all times
-    if tReq is not None: #have to qualify this since picktime default gives last time as fallback
-        tUsedInd = picktime(iono.time, tReq, None)[0]
+    if tReq is not None: # have to qualify this since picktime default gives last time as fallback
+        tUsedInd = picktime(iono.time, tReq)[0]
         if tUsedInd is not None: # in case ind is 0
-            iono = iono[tUsedInd,...]
-            plasmaparam = plasmaparam[tUsedInd,...]
+            iono['iono'] = iono['iono'][tUsedInd,...]
+            iono['pp'] = iono['pp'][tUsedInd,...]
 
-    return iono,chi,plasmaparam
+    return iono
 
 
 def data_tra(f, hd:dict):
@@ -106,35 +97,41 @@ def data_tra(f, hd:dict):
 
     iono = xarray.DataArray(data[:,dextind],
                              coords=[('alt_km',data[:,0]),
-                                     ('isrparam', PARAM)])
+                                     ('isrparam', PARAM)],
+                            attrs={'filename':f.name})
 #%% four ISR parameters
     """
     ion velocity from read_fluidmod.m
     data_tra.m does not consider n7 for ne or vi computation,
     BUT read_fluidmod.m does consider n7!
     """
-    pp = compplasmaparam(iono,head['approx'])
+    pp = compplasmaparam(iono, head['approx'])
+# %% output
+    iono = xarray.Dataset({'iono':iono,'pp':pp},
+                          coords={'time':head['htime']},
+                          attrs={'chi':head['chi'],})
 
-    return iono, head['chi'],head['htime'], data[:,0],pp
+    return iono
 
 
 #%% read iono
 def readmsis(ifn:Path, ofn:Path=None, dz=None, newaltmethod:str=None):
     """reads MSIS model output that Transcar uses"""
 
-    nhead = headbytes//d_bytes
+    nhead = headbytes // d_bytes
 
     hd,hdraw = readionoheader(ifn,nhead)
 
     msis,raw = readinitconddat(hd,ifn) #index is altitude (km)
-
     pp = compplasmaparam(msis, hd['approx'])
 
-    msisinterp,hdinterp,ppinterp, rawinterp = interpdat(msis, dz,hd,pp,raw, newaltmethod)
+    iono = xarray.Dataset({'msis':msis,'pp':pp},attrs={'hd':hd})
 
-    writeinterpunformat(hdinterp['nx'], rawinterp,hdraw,ofn)
+    msisint, rawinterp = interpdat(iono, dz,raw, newaltmethod)
 
-    return msisinterp,hdinterp,ppinterp
+    writeinterpunformat(msisint.attrs['hd']['nx'], rawinterp,hdraw,ofn)
+
+    return msisint
 
 
 def getaltgrid(ifn):
@@ -147,11 +144,12 @@ def getaltgrid(ifn):
 
     return msis.index.values
 
-def interpdat(md:xarray.DataArray, dz, hd:dict, pp:xarray.DataArray, raw:np.ndarray, newaltmethod:str):
+
+def interpdat(md:xarray.DataArray, dz, raw:np.ndarray, newaltmethod:str):
     """interpolate data to new altitude grid"""
 #%% was interpolation requested?
     if dz  is None:
-        return md, hd, pp, raw
+        return md, raw
 #%% interpolate initial conditions
     malt = newaltmethod.lower()
     if malt == 'tanh':
@@ -172,8 +170,7 @@ def interpdat(md:xarray.DataArray, dz, hd:dict, pp:xarray.DataArray, raw:np.ndar
         z_new = np.asarray(z_new)
     else:
         logging.error('unknown interp method {newaltmethod}, returning unaltered values.')
-
-        return md, hd, pp, raw
+        return md, raw
 
     if z_new.size > toobig:
         logging.warning(f'Transcar may not accept altitude grids with more than about {toobig} elements.')
@@ -198,10 +195,13 @@ def interpdat(md:xarray.DataArray, dz, hd:dict, pp:xarray.DataArray, raw:np.ndar
                             coords={'alt_km':z_new,
                                     'isrparam':pp.coords['isrparam']})
     for p in pp:
-        fint = interp1d(pp.index, pp[p], kind='linear', axis=0)
-        ppint[p] = fint(z_new)
+        fint = interp1d(pp.alt_km, pp.loc[:,p], kind='linear', axis=0)
+        ppint.loc[:,p] = fint(z_new)
 
-    return mint,hdint, ppint, rawint
+
+    iono = xarray.Dataset({'md':mint,'pp':ppint},attrs={'hd':hd})
+
+    return iono, rawint
 
 
 def writeinterpunformat(nx, rawi, hdraw, ofn):
@@ -356,14 +356,17 @@ def calcVERtc(kinfn:Path,datadir:Path, beamEnergy:float, tReq:datetime, sim):
         tReq=None
         logging.error(f'problem with requested time : {tReq} beam{beamEnergy}  {e}')
 #%% convert transcar output
-    spec = ExcitationRates(beamdir/kinfn)
+    rates = ExcitationRates(beamdir/kinfn)
 
-    tReqInd,tUsed = picktime(spec.time,tReq,beamEnergy)
+    tReqInd,tUsed = picktime(rates.time,tReq)
 
-    return spec,tUsed,tReqInd
+    rates.attrs['tReqInd'] = tReqInd
+    rates.attrs['tUsed'] = tUsed
+
+    return rates
 
 
-def picktime(tTC,tReq,beamEnergy):
+def picktime(tTC,tReq):
     tReqInd = find_nearest(tTC,tReq)[0]
 
     tUsed = tTC[tReqInd]

@@ -71,7 +71,7 @@ def _plot1d(y,z,name,sfmt,infile,tctime):
     #ax.xaxis.set_major_formatter(DateFormatter('%H:%M:%S'))
     #ax.autoscale(True)
 
-def plotionoinit(msis:xarray.DataArray, hd:dict):
+def plotionoinit(msis:xarray.DataArray):
     """plot Transcar ionosphere initial condition data"""
 
     figure(1).clf()
