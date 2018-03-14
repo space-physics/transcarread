@@ -1,15 +1,13 @@
 import logging
 from pathlib import Path
 from datetime import datetime
-from dateutil.parser import parse
 import numpy as np
 from scipy.interpolate import interp1d
-from pandas import DataFrame
 from dateutil.relativedelta import relativedelta
 from pytz import UTC
 import xarray
 #
-from sciencedates import find_nearest
+from sciencedates import find_nearest,forceutc
 from gridaurora.ztanh import setupz
 #
 nhead = 126 #a priori from transconvec_13
@@ -51,34 +49,34 @@ def read_tra(tcofn:Path, tReq:datetime=None):
 
     Note: header length = 2*ncol
     """
-    head0 = readionoheader(tcofn, nhead)[0]
-    ncol = head0['ncol']; n_alt = head0['nx']
+    hd = readionoheader(tcofn, nhead)[0]
 
-    size_head = 2*ncol #+2 by defn of transconvec_13
-    size_data_record = n_alt*ncol #data without header
-    size_record = size_head + size_data_record
+    hd['size_head'] = 2*hd['ncol'] #+2 by defn of transconvec_13
+    hd['size_data_record'] = hd['nx'] * hd['ncol'] #data without header
+    hd['size_record'] = hd['size_head'] + hd['size_data_record']
 
-    assert size_head == nhead
+    assert hd['size_head'] == nhead
 #%% read data based on header
-    iono,chi,pp = loopread(tcofn,size_record,ncol,n_alt,size_head,size_data_record,tReq)
+    iono,chi,pp = loopread(tcofn, hd, tReq)
 
     return iono,chi, pp
 
-def loopread(tcoutput,size_record,ncol,n_alt,size_head,size_data_record,tReq):
-    tcoutput = Path(tcoutput).expanduser()
-    n_t = tcoutput.stat().st_size//size_record//d_bytes
+
+def loopread(tcofn:Path, hd:dict, tReq:datetime):
+    tcoutput = Path(tcofn).expanduser()
+    n_t = tcoutput.stat().st_size // hd['size_record'] // d_bytes
 
     chi  = np.empty(n_t, float)
     t =    np.empty(n_t, datetime)
 
-    plasmaparam = xarray.DataArray(data= np.empty((n_t,n_alt,4)),
+    plasmaparam = xarray.DataArray(data= np.empty((n_t,hd['nx'],4)),
                                    dims=['time','alt_km','isrparam'])
-    iono = xarray.DataArray(data=np.empty((n_t,n_alt,22)),
+    iono = xarray.DataArray(data=np.empty((n_t, hd['nx'],22)),
                      dims=['time','alt_km','param'])
 
     with tcoutput.open('rb') as f: #reset to beginning
         for i in range(n_t):
-            iono[i,...], chi[i], t[i], alt, plasmaparam[i,...] = data_tra(f, size_record,ncol,n_alt, size_head, size_data_record)
+            iono[i,...], chi[i], t[i], alt, plasmaparam[i,...] = data_tra(f, hd)
         # FIXME isn't there a way to inherit coordinates like Pandas?
         iono = iono.assign_coords(time=t,param=PARAM,alt_km=alt)
         plasmaparam = plasmaparam.assign_coords(time=t,isrparam=ISRPARAM,alt_km=alt)
@@ -91,12 +89,13 @@ def loopread(tcoutput,size_record,ncol,n_alt,size_head,size_data_record,tReq):
 
     return iono,chi,plasmaparam
 
-def data_tra(f, size_record, ncol, n_alt, nhead, size_data_record):
+
+def data_tra(f, hd:dict):
 #%% parse header
     h = np.fromfile(f, np.float32, nhead)
     head = parseionoheader(h)
 #%% read and index data
-    data = np.fromfile(f, np.float32,size_data_record).reshape((n_alt,ncol),order='C')
+    data = np.fromfile(f, np.float32, hd['size_data_record']).reshape((hd['nx'],hd['ncol']),order='C')
 
     dextind = tuple(range(1,7)) + (49,) + tuple(range(7,13))
     if head['approx'] >= 13:
@@ -120,13 +119,16 @@ def data_tra(f, size_record, ncol, n_alt, nhead, size_data_record):
 
 
 #%% read iono
-def readmsis(ifn, ofn, dz, newaltmethod):
+def readmsis(ifn:Path, ofn:Path=None, dz=None, newaltmethod:str=None):
+    """reads MSIS model output that Transcar uses"""
+
     nhead = headbytes//d_bytes
+
     hd,hdraw = readionoheader(ifn,nhead)
 
     msis,raw = readinitconddat(hd,ifn) #index is altitude (km)
 
-    pp = compplasmaparam(msis,hd['approx'])
+    pp = compplasmaparam(msis, hd['approx'])
 
     msisinterp,hdinterp,ppinterp, rawinterp = interpdat(msis, dz,hd,pp,raw, newaltmethod)
 
@@ -145,17 +147,17 @@ def getaltgrid(ifn):
 
     return msis.index.values
 
-def interpdat(md, dz, hd, pp, raw,newaltmethod):
-
+def interpdat(md:xarray.DataArray, dz, hd:dict, pp:xarray.DataArray, raw:np.ndarray, newaltmethod:str):
+    """interpolate data to new altitude grid"""
 #%% was interpolation requested?
-    if dz[0] is None:
+    if dz  is None:
         return md, hd, pp, raw
 #%% interpolate initial conditions
     malt = newaltmethod.lower()
     if malt == 'tanh':
         z_new = setupz(md.shape[0], md.index[0], dz[0], dz[1])
     elif malt == 'linear':
-        print('interpolating to grid space {:.2f}'.format(dz) + ' km.')
+        print(f'interpolating to grid space {dz:.2f} km.')
         z_new = np.arange(md.index[0], md.index[-1], dz[0], dtype=float)
     elif malt =='incr':
         """
@@ -169,19 +171,21 @@ def interpdat(md, dz, hd, pp, raw,newaltmethod):
             cdz+=dz[0]
         z_new = np.asarray(z_new)
     else:
-        logging.warning('unknown interp method {}, returning unaltered values.'.format(newaltmethod))
+        logging.error('unknown interp method {newaltmethod}, returning unaltered values.')
+
         return md, hd, pp, raw
 
     if z_new.size > toobig:
-        logging.warning('note: Transcar may not accept altitude grids with more than about {} elements.'.format(toobig))
+        logging.warning(f'Transcar may not accept altitude grids with more than about {toobig} elements.')
 
-
-
-    mint = DataFrame(index=z_new,
-                     columns=md.columns.values.tolist()) #this is faster than list(md)
+# %% assemble output
+    mint = xarray.DataArray(np.empty((z_new.size,md.shape[1])),
+                            dims=['alt_km','isrparam'],
+                            coords={'alt_km':z_new,
+                                    'isrparam':md.coords['isrparam']}) #this is faster than list(md)
     for m in md:
         fint = interp1d(md.index, md[m], kind='linear',axis=0)
-        mint[m] = fint(z_new)
+        mint.loc[:,m] = fint(z_new)
 #%% new header, only change to number of altitudes
     hdint = hd
     hdint['nx'] = z_new.size
@@ -189,17 +193,23 @@ def interpdat(md, dz, hd, pp, raw,newaltmethod):
     fint = interp1d(md.index, raw, kind='linear', axis=0)
     rawint = fint(z_new)
 #%% interpolate derived parameters
-    ppint = DataFrame(index=z_new,
-                      columns=pp.columns.values.tolist())
+    ppint = xarray.DataArray(np.empty((z_new.size, pp.shape[1])),
+                             dims=['alt_km','isrparam'],
+                            coords={'alt_km':z_new,
+                                    'isrparam':pp.coords['isrparam']})
     for p in pp:
         fint = interp1d(pp.index, pp[p], kind='linear', axis=0)
         ppint[p] = fint(z_new)
 
     return mint,hdint, ppint, rawint
 
+
 def writeinterpunformat(nx, rawi, hdraw, ofn):
+    """write altitude-interpolated data to proprietary Transcar binary format"""
+
     if ofn is None:
         return
+
     ofn = Path(ofn).expanduser()
     #update header with new number of altitudes due to interpolation
     hdraw[0] = nx
@@ -210,7 +220,7 @@ def writeinterpunformat(nx, rawi, hdraw, ofn):
         rawi.astype(np.float32).tofile(f,'','%f32')
 
 
-def readionoheader(ifn, nhead):
+def readionoheader(ifn:Path, nhead:int):
     """ reads BINARY transcar_output file """
     ifn = Path(ifn).expanduser() #not dupe, for those importing externally
 
@@ -218,6 +228,7 @@ def readionoheader(ifn, nhead):
         h = np.fromfile(f, np.float32, nhead)
 
     return parseionoheader(h), h
+
 
 def parseionoheader(h):
     """
@@ -250,7 +261,6 @@ def parseionoheader(h):
     # not a Series because all have to be same datatype
     # not a Dataframe because it's only 1-D
     hd = {'nx':h[0].astype(int), 'ncol':h[1].astype(int),
-          #'year':h[2], 'month':h[3], 'day':h[4], 'hour':h[5], 'minute':h[6], 'second':h[7],
           'intpas':h[8], 'longeo':h[9], 'latgeo':h[10], 'lonmag':h[11], 'latmag':h[12],
           'tmag':h[13], 'f1072':h[14], 'f1073':h[15], 'ap2':h[16], 'ikp':h[17],
           'dTinf':h[18], 'dUinf':h[19], 'cofo':h[20], 'cofh':h[21],'cofn':h[22],
@@ -264,7 +274,9 @@ def parseionoheader(h):
 
     return hd
 
-def readinitconddat(hd,fn):
+
+def readinitconddat(hd:dict, fn:Path) -> (xarray.DataArray,np.ndarray):
+    """Reads initial conditions for Transcar from binary file"""
     fn = Path(fn).expanduser()
     nx = hd['nx']
     ncol = hd['ncol']
@@ -286,20 +298,23 @@ def readinitconddat(hd,fn):
         f.seek(ipos,0)
         rawall = np.fromfile(f,np.float32,nx*ncol).reshape((nx,ncol),order='C') #yes order='C'!
 
-    msis = DataFrame(rawall[:,dextind],
-                     index = rawall[:,0], # altitude
-                     columns=('n1','n2','n3','n4','n5','n6',
-                              'v1','v2','v3','vm','ve',
-                              't1p','t1t','t2p','t2t','t3p','t3t',
-                              'tmp','tmt','tep','tet',
-                              'q1','q2','q3','qe','nno','uno',
-                              'po','ph','pn','pn2','po2','heat',
-                              'po1d','no1d','uo1d','n7'))
+    msis = xarray.DataArray(rawall[:,dextind],
+                            dims=['alt_km','isrparam'],
+                            coords={'alt_km':rawall[:,0],
+                                    'isrparam':['n1','n2','n3','n4','n5','n6',
+                                  'v1','v2','v3','vm','ve',
+                                  't1p','t1t','t2p','t2t','t3p','t3t',
+                                  'tmp','tmt','tep','tet',
+                                  'q1','q2','q3','qe','nno','uno',
+                                  'po','ph','pn','pn2','po2','heat',
+                                  'po1d','no1d','uo1d','n7']},
+                            attrs={'filename':fn})
 
     return msis,rawall
 
+
 #%% read transcar
-def calcVERtc(kinfn:Path,datadir:Path, beamEnergy, tReq, sim):
+def calcVERtc(kinfn:Path,datadir:Path, beamEnergy:float, tReq:datetime, sim):
     '''
     calcVERtc is the function called by "hist-feasibility" to get Transcar modeled VER/flux
 
@@ -322,13 +337,14 @@ def calcVERtc(kinfn:Path,datadir:Path, beamEnergy, tReq, sim):
     for each energy bin, we take Plambda through the EMCCD window and optional BG3 filter,
     yielding Peigen, a ver eigenprofile p(z,E) for that particular energy
     '''
+    tReq = forceutc(tReq)
 #%% get beam directory
-    beamdir = Path(datadir) / f'beam{beamEnergy}'
+    beamdir = Path(datadir) / f'beam{beamEnergy:.0f}'
     logging.debug(beamEnergy)
 #%% read simulation parameters
     tctime = readTranscarInput(beamdir/'dir.input'/sim.transcarconfig)
     if tctime is None:
-        return None, None #leave here
+        return
 
     try:
       if not tctime['tstartPrecip'] < tReq < tctime['tendPrecip']:
@@ -338,13 +354,14 @@ def calcVERtc(kinfn:Path,datadir:Path, beamEnergy, tReq, sim):
         logging.warning(f'falling back to using the end simulation time: {tReq}')
     except TypeError as e:
         tReq=None
-        logging.error(f'problem with requested time : {tReq} beam {beamEnergy}  {e}')
+        logging.error(f'problem with requested time : {tReq} beam{beamEnergy}  {e}')
 #%% convert transcar output
-    spec, tTC, dipangle = ExcitationRates(beamdir/kinfn)
+    spec = ExcitationRates(beamdir/kinfn)
 
-    tReqInd,tUsed = picktime(tTC,tReq,beamEnergy)
+    tReqInd,tUsed = picktime(spec.time,tReq,beamEnergy)
 
     return spec,tUsed,tReqInd
+
 
 def picktime(tTC,tReq,beamEnergy):
     tReqInd = find_nearest(tTC,tReq)[0]
@@ -358,7 +375,7 @@ class SimpleSim():
     """
     simple input for debugging/self test
     """
-    def __init__(self,filt,inpath,reacreq=None,lambminmax=None,transcarutc=None):
+    def __init__(self,filt,inpath,reacreq=None, lambminmax=None, transcarutc=None):
         self.loadver = False
         self.loadverfn = Path('precompute/01Mar2011_FA.h5')
         self.opticalfilter = filt
@@ -372,10 +389,7 @@ class SimpleSim():
         self.transcarpath = inpath
         self.transcarconfig = 'DATCAR'
 
-        if isinstance(transcarutc,str):
-            self.transcarutc = parse(transcarutc)
-        else:
-            self.transcarutc = transcarutc
+        self.transcarutc = forceutc(transcarutc)
 
         if reacreq is None:
             self.reacreq = ['metastable','atomic','n21ng','n2meinel','n22pg','n21pg']
@@ -393,15 +407,15 @@ class SimpleSim():
         self.qefn = Path('precompute/emccdQE.h5')
 
 # %% ISR
-def compplasmaparam(iono, approx) -> xarray.DataArray:
+def compplasmaparam(iono:xarray.DataArray, approx:int) -> xarray.DataArray:
     assert isinstance(iono, xarray.DataArray)
 
     pp = xarray.DataArray(np.empty((iono.shape[0],4)),
-                   coords=[('alt_km',iono.alt_km),
-                           ('isrparam',['ne','vi','Ti','Te'])]
-                   )
+                          coords=[('alt_km',iono.alt_km),
+                                  ('isrparam',['ne','vi','Ti','Te'])],
+                                  attrs={'filename':iono.attrs['filename']})
 
-    nm = iono.sel(isrparam=['n4','n5','n6']).sum(dim='isrparam')
+    nm = iono.loc[:,['n4','n5','n6']].sum(dim='isrparam')
 
     pp.loc[:,'ne'] = comp_ne(iono)
 #    pp.sel(isrparam='ne') = comp_ne(iono) # doesn't work for assign?
@@ -411,18 +425,24 @@ def compplasmaparam(iono, approx) -> xarray.DataArray:
 
     return pp
 
+
 def comp_ne(d):
-    return (d.loc[:,['n1','n2','n3','n4','n5','n6','n7']].sum('isrparam'))
+    """compute electron density vs. altitude"""
+    return d.loc[:,['n1','n2','n3','n4','n5','n6','n7']].sum('isrparam')
+
 
 def comp_vi(d,nm,pp):
+    """compute ion velocity vs. altitude"""
     return (d.loc[:,['n1','v1']].prod('isrparam') +
             d.loc[:,['n2','v2']].prod('isrparam') +
             d.loc[:,['n3','v3']].prod('isrparam') +
             nm * d.loc[:,'vm']) / pp.loc[:,'ne']
 
+
 def comp_Ti(d,nm,pp):
-    """transconvec_13.op.f
-    read_fluidmod.m, data_tra.m
+    """
+    Compute ion temperature
+    Refs: transconvec_13.op.f  read_fluidmod.m, data_tra.m
     """
 
     Tipar= (d.loc[:,['n1','t1p']].prod('isrparam') +
@@ -469,10 +489,11 @@ def ExcitationRates(kinfn:Path):
     NdataCol: number of data elements per altitude + 1
     NumData: number of data elements to read at this time step
     """
-    excrate, dipangle, precip, t = readexcrates(kinfn)
+    rates = readexcrates(kinfn)
     # breakup slightly to meet needs of simpler external programs
     #z = excite.major_axis.values
-    return excrate, t, dipangle
+    return rates['excitation']
+
 
 def initparams(kinfn:Path):
     kinfn = Path(kinfn).expanduser()
@@ -491,7 +512,8 @@ def initparams(kinfn:Path):
 
     return kinfn,nalt,nen,dip,ctime,ndatrow,ndat,Nprecip
 
-def readexcrates(kinfn):
+
+def readexcrates(kinfn:Path) -> xarray.Dataset:
     kinfn,nalt,nen,dipangle,ctime,ndatrow,ndat,Nprecip = initparams(kinfn)
     #using read_csv was vastly slower!
 
@@ -503,11 +525,12 @@ def readexcrates(kinfn):
     n_t = dstream.size//size_record
 
     t = np.empty(n_t, datetime)
-    excrate = xarray.DataArray(data=np.empty((n_t,nalt,10)),
+    excrate = xarray.DataArray(np.empty((n_t,nalt,10)),
                         dims=['time','alt_km','reaction'])
     excrate['reaction'] = ['no1d','no1s','noii2p','nn2a3','po3p3p','po3p5p', 'p1ng','pmein','p2pg','p1pg']
 
-    precip = xarray.DataArray(data=np.empty((n_t,nen,NprecipCol)),dims=['time','e','fluxdown'])
+    precip = xarray.DataArray(data=np.empty((n_t,nen,NprecipCol)),
+                              dims=['time','e','fluxdown'])
 
     for i in range(n_t):
         cind = np.s_[i*size_record:(i+1)*size_record]
@@ -529,7 +552,11 @@ def readexcrates(kinfn):
 
     precip['time'] = t
 
-    return excrate, dipangle, precip, t
+    rates = xarray.Dataset({'excitation':excrate,
+                            'precip':precip})
+
+    return rates
+
 
 def getHeader(line):
     """

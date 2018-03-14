@@ -32,8 +32,7 @@ def main(fn,tReq,verbose):
 #%% load transcar output
     iono,chi, pp = read_tra(fn,tReq)
 #%% do plot
-    t = pp.time
-    plotisr(t,iono,pp, fn, 'cubehelix',tctime,sfmt,verbose)
+    plotisr(iono,pp, fn, 'cubehelix',tctime,sfmt,verbose)
 
     #doplot1d(t,chi,'$\chi$',sfmt,fn, tctime)
 

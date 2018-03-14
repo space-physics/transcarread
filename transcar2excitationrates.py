@@ -2,12 +2,9 @@
 """ test readexcrates.py
 """
 from pathlib import Path
-import sys
 from transcarread import ExcitationRates
 from transcarread.plots import plotExcrates
 import seaborn as sns
-#
-sys.tracebacklimit=2 # 1 gave IndexError needlessly
 #%% command line
 if __name__=='__main__':
     from matplotlib.pyplot import show
@@ -20,20 +17,14 @@ if __name__=='__main__':
 
     path = Path(p.path).expanduser()
 
-    if p.profile:
-        import cProfile,pstats
-        proffn = 'excstats.pstats'
-        cProfile.run('ExcitationRates(p.path,p.emisfn)',proffn)
-        pstats.Stats(proffn).sort_stats('time','cumulative').print_stats(50)
+    if path.stem.startswith('beam'):
+        dlist = [path]
     else:
-        if path.stem.startswith('beam'):
-            dlist = [path]
-        else:
-            dlist = [d for d in path.iterdir() if d.is_dir()]
+        dlist = [d for d in path.iterdir() if d.is_dir()]
 
-        for d in dlist:
-            spec,timeop,dipangle= ExcitationRates(d/p.emisfn)
-            spec.name = d.name[4:]
-            plotExcrates(spec)
+    for d in dlist:
+        spec = ExcitationRates(d/p.emisfn)
+        spec.name = d.name[4:]
+        plotExcrates(spec)
 
-        show()
+    show()

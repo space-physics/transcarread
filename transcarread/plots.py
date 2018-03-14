@@ -1,6 +1,7 @@
 from datetime import datetime
 from pathlib import Path
-from matplotlib.pyplot import figure,subplots
+import xarray
+from matplotlib.pyplot import figure
 from matplotlib.dates import DateFormatter,MinuteLocator, SecondLocator
 from matplotlib.colors import LogNorm
 #
@@ -8,6 +9,7 @@ from . import ISRPARAM
 
 
 def timelbl(time,ax,tctime):
+    """improve time axis labeling"""
     if time.size<200:
         ax.xaxis.set_minor_locator(SecondLocator(interval=10))
         ax.xaxis.set_minor_locator(SecondLocator(interval=2))
@@ -19,7 +21,11 @@ def timelbl(time,ax,tctime):
     ax.axvline(tctime['tstartPrecip'], color='red', linestyle='--', label='Precip. Start')
     ax.axvline(tctime['tendPrecip'], color='red', linestyle='--',label='Precip. End')
 
-def plotisr(t,iono, pp, infile,cmap,tctime,sfmt,verbose):
+
+def plotisr(iono:xarray.DataArray, pp:xarray.DataArray, infile:Path, tctime:dict,
+            cmap:str=None, sfmt=None, verbose:bool=False):
+    """Plot Transcar ISR parameters"""
+    t = pp.time
     if t.size<2:  # need at least 2 times for pcolormesh
         return
 
@@ -38,6 +44,7 @@ def plotisr(t,iono, pp, infile,cmap,tctime,sfmt,verbose):
                                 vmin=0.1,vmax=1e12)
             _tplot(t,tctime,fg,ax,pcm,sfmt,str(ind),infile)
 
+
 def _tplot(t,tctime,fg,ax,pcm,sfmt,ttxt,infile):
     ax.autoscale(True,tight=True)
     ax.set_xlabel('time [UTC]')
@@ -47,6 +54,7 @@ def _tplot(t,tctime,fg,ax,pcm,sfmt,ttxt,infile):
     timelbl(t,ax,tctime)
     ax.xaxis.set_major_formatter(DateFormatter('%H:%M:%S'))
     ax.tick_params(axis='both', which='both', direction='out', labelsize=12)
+
 
 def _plot1d(y,z,name,sfmt,infile,tctime):
     if y.ndim==2: # all times, so pick last time
@@ -63,51 +71,55 @@ def _plot1d(y,z,name,sfmt,infile,tctime):
     #ax.xaxis.set_major_formatter(DateFormatter('%H:%M:%S'))
     #ax.autoscale(True)
 
-def plotionoinit(d, pp, ifn):
+def plotionoinit(msis:xarray.DataArray, hd:dict):
+    """plot Transcar ionosphere initial condition data"""
 
     figure(1).clf()
     ax= figure(1).gca()
-    for i in ['n'+str(j) for j in range(1,7)]:
-        ax.plot(d[i], d.index, label=i)
+    for i in [f'n{j}' for j in range(1,7)]:
+        ax.plot(msis.loc[:,i], msis.alt_km, label=i)
 
     ax.set_xscale('log')
     ax.legend(loc='best')
 #    #msis.plot(y='alt',x='n4',title=ifn,logx=True) # why doesn't this plot correctly?
     ax.set_ylabel('altitude [km]')
-    ax.set_xlabel('n')
-    ax.set_title('density')
-
+    ax.set_xlabel('n [m$^{-3}$]')
+    ax.set_title(f'{msis.attrs["filename"]} \n Density components')
+# %% velocities
     figure(2).clf()
-    a2= figure(2).gca()
+    ax= figure(2).gca()
     for s in ('v1','v2','v3','ve','vm'):
-        a2.plot(d[s], d.index, label=s)
-    a2.set_xlabel('v')
-    a2.set_ylabel('altitude [km]')
-    a2.legend(loc='best')
-    a2.grid(True)
+        ax.plot(msis.loc[:,s], msis.alt_km, label=s)
 
-    plotisr(pp, 10,(None,None),ifn)
-    plotisr(pp, 11,(90,300),ifn)
+    ax.set_xlabel('v [m/s]')
+    ax.set_ylabel('altitude [km]')
+    ax.legend(loc='best')
+    ax.grid(True)
+    ax.set_title(f'{msis.attrs["filename"]} \n Velocity components')
 
-def plotisrparam(pp,fgn,zlim,ifn):
-    bn = Path(ifn).name
-    figure(fgn).clf()
 
-    fg,ax = subplots(nrows=1,ncols=3,sharey=True, num=fgn, figsize=(12,5))
-    ax[0].plot(pp['ne'], pp.index)
-    ax[0].set_xlabel('$n_e$')
-    ax[0].set_ylabel('alt [km]')
+
+def plotisrparam(pp:xarray.DataArray, zlim:tuple=None):
+    """plot ISR parameter data"""
+    fg = figure(figsize=(12,5))
+    fg.suptitle(pp.attrs['filename'])
+
+    ax = fg.subplots(nrows=1,ncols=3,sharey=True)
+    ax[0].plot(pp.loc[:,'ne'], pp.alt_km)
+    ax[0].set_xlabel('$n_e$ [m$^{-3}$]')
+    ax[0].set_ylabel('altitude along B-field line [km]')
     ax[0].set_xscale('log')
+    ax[0].set_title('Electron Number Density')
 
-    ax[1].plot(pp['vi'], pp.index)
-    ax[1].set_xlabel('$v_i$')
-    ax[1].set_title(bn,y=1.05)
+    ax[1].plot(pp.loc[:,'vi'], pp.alt_km)
+    ax[1].set_xlabel('$v_i$ [m/s]')
+    ax[1].set_title('ion velocity')
 
-
-    ax[2].plot(pp['Ti'], pp.index, label='$T_i$')
-    ax[2].plot(pp['Te'], pp.index, label='$T_e$')
-    ax[2].set_xlabel('Temperature')
+    ax[2].plot(pp.loc[:,'Ti'], pp.alt_km, label='$T_i$')
+    ax[2].plot(pp.loc[:,'Te'], pp.alt_km, label='$T_e$')
+    ax[2].set_xlabel('Temperature [K]')
     ax[2].legend(loc='best')
+    ax[2].set_title('Temperatures')
 
     for a in ax:
         a.set_ylim(zlim)
@@ -115,6 +127,7 @@ def plotisrparam(pp,fgn,zlim,ifn):
 
 #    #fg.tight_layout() #no, it spaces the subplots wider
     fg.subplots_adjust(wspace=0.075) #brings subplots horizontally closer
+
 
 def plotExcrates(spec,tReq=None):
     if spec.ndim==3 and isinstance(tReq,datetime):
