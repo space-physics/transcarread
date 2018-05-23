@@ -26,4 +26,5 @@ setup(name='transcarread',
       extras_require={'plot':['matplotlib','seaborn'],
                       'tests':tests_require,},
       scripts=['PlotTranscarInput.py','transcar2isr.py','transcar2excitationrates.py'],
+      include_package_data=True,
 	  )
