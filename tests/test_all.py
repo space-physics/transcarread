@@ -6,42 +6,44 @@ examples:
 """
 from pathlib import Path
 import numpy as np
-from numpy.testing import assert_allclose,run_module_suite
-#
+import pytest
+from pytest import approx
 import transcarread as tr
 #
-tdir  = Path(__file__).parent
+tdir = Path(__file__).parent
 infn = tdir / 'data/beam52/dir.input/90kmmaxpt123.dat'
 
 
 def test_readtra():
-#%% get sim parameters
-    ifn   = infn.parents[1] / 'dir.input/DATCAR'
+    # %% get sim parameters
+    ifn = infn.parents[1] / 'dir.input/DATCAR'
     tcofn = tdir / 'data/beam52/dir.output/transcar_output'
     tReq = '2013-03-31T09:00:21'
     H = tr.readTranscarInput(ifn)
-#%% load transcar output
+# %% load transcar output
     iono = tr.read_tra(tcofn, tReq)
-#%% check
-    assert_allclose(H['latgeo_ini'], 65.12)
-    assert_allclose(iono['iono'].loc[...,'n1'][30], 2.0969721e+11)
-    assert_allclose(iono.attrs['chi'],110.40122986)
-    assert_allclose(iono['pp'].loc[...,'Ti'][53], 1285.927001953125)
+# %% check
+    assert H['latgeo_ini'] == approx(65.12)
+    assert iono['iono'].loc[..., 'n1'][30] == approx(2.0969721e+11)
+    assert iono.attrs['chi'] == approx(110.40122986)
+    assert iono['pp'].loc[..., 'Ti'][53] == approx(1285.927001953125)
 
 
 def test_readtranscar():
     e0 = 52.
     tReq = '2013-03-31T09:00:21'
     sim = tr.SimpleSim('bg3', tdir/f'data/beam{e0}/dir.output')
-    rates = tr.calcVERtc('dir.output/emissions.dat',tdir/'data', e0,tReq,sim)
-#%%
-    assert_allclose(rates.loc[...,'no1d'][53], 15638.62)
+    rates = tr.calcVERtc('dir.output/emissions.dat',
+                         tdir/'data', e0, tReq, sim)
+# %%
+    assert rates.loc[..., 'no1d'][0, 53] == approx(15638.62)
     assert rates.time.values == np.datetime64('2013-03-31T09:00:42')
 
 
 def test_readmsis():
     msis = tr.readmsis(infn)
-    assert_allclose(msis['msis'].loc[...,'no1d'][53], 116101103616.0)
+    assert msis['msis'].loc[..., 'no1d'][53] == approx(116101103616.0)
 
-if __name__=='__main__':
-    run_module_suite()
+
+if __name__ == '__main__':
+    pytest.main(['-x', __file__])
