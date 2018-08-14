@@ -500,14 +500,14 @@ def comp_Te(d, approx):
 # %%
 
 
-def ExcitationRates(kinfn: Path):
+def ExcitationRates(kinfn: Path) -> xarray.DataArray:
     """
     Michael Hirsch 2014
     Parses the ASCII dir.output/emissions.dat in milliseconds
     based on transconvec_13
 
     outputs:
-    excrate: Panel of reaction x altitude x time
+    excrate: xarray.DataArray of reaction x altitude x time
 
     variables:
     ------------
@@ -527,7 +527,7 @@ def ExcitationRates(kinfn: Path):
     return rates['excitation']
 
 
-def initparams(kinfn: Path):
+def initparams(kinfn: Path) -> tuple:
     kinfn = Path(kinfn).expanduser()
 
     with kinfn.open('r') as fid:  # going to rewind after this priming read
