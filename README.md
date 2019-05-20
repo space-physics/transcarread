@@ -3,7 +3,6 @@
 [![image](https://ci.appveyor.com/api/projects/status/um51akgrwe2uogla?svg=true)](https://ci.appveyor.com/project/scivision/transcarread)
 [![Maintainability](https://api.codeclimate.com/v1/badges/67284a35127f7ea3beea/maintainability)](https://codeclimate.com/github/scivision/transcarread/maintainability)
 [![PyPi version](https://img.shields.io/pypi/pyversions/transcarread.svg)](https://pypi.python.org/pypi/transcarread)
-[![PyPi formats](https://img.shields.io/pypi/format/transcarread.svg)](https://pypi.python.org/pypi/transcarread)
 [![PyPi Download stats](http://pepy.tech/badge/transcarread)](http://pepy.tech/project/transcarread)
 
 # Transcar Read
@@ -15,7 +14,7 @@ penetration ionosphere model.
 
 ## Install
 
-[Python](https://conda.io/miniconda.html) \>= 3.6 required:
+[Python](https://conda.io/miniconda.html) >= 3.6 required:
 
     python -m pip install -e .
 
