@@ -26,7 +26,7 @@ def timelbl(time, ax, tctime):
 
 
 def plotisr(iono: xarray.Dataset, infile: Path, tctime: dict,
-            cmap: str=None, sfmt=None, verbose: bool=False):
+            cmap: str = None, sfmt=None, verbose: bool = False):
     """Plot Transcar ISR parameters"""
     t = iono.time
     if t.size < 2:  # need at least 2 times for pcolormesh
@@ -105,7 +105,7 @@ def plotionoinit(msis: xarray.DataArray):
     ax.set_title(f'{msis.attrs["filename"]} \n Velocity components')
 
 
-def plotisrparam(pp: xarray.DataArray, zlim: tuple=None):
+def plotisrparam(pp: xarray.DataArray, zlim: tuple = None):
     """plot ISR parameter data"""
     fg = figure(figsize=(12, 5))
     fg.suptitle(pp.attrs['filename'])
@@ -135,7 +135,7 @@ def plotisrparam(pp: xarray.DataArray, zlim: tuple=None):
     fg.subplots_adjust(wspace=0.075)  # brings subplots horizontally closer
 
 
-def plotExcrates(rates: xarray.DataArray, tReq: datetime=None):
+def plotExcrates(rates: xarray.DataArray, tReq: datetime = None):
     if rates.ndim == 3 and isinstance(tReq, datetime):
         rates = rates.loc[tReq, ...]
     elif rates.ndim == 3:

@@ -1,15 +1,12 @@
 import logging
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timedelta
 import numpy as np
 from scipy.interpolate import interp1d
-from dateutil.parser import parse
-from dateutil.relativedelta import relativedelta
 import xarray
 from typing import Tuple, Union
 #
-from sciencedates import find_nearest
-from gridaurora.ztanh import setupz
+from .ztanh import setupz
 #
 nhead = 126  # a priori from transconvec_13
 NumPerRow = 5
@@ -29,7 +26,7 @@ PARAM = ['n1', 'n2', 'n3', 'n4', 'n5', 'n6', 'n7',
          't1p', 't1t', 't2p', 't2t', 't3p', 't3t', 'tmp', 'tmt', 'tep', 'tet']
 
 
-def read_tra(tcofn: Path, tReq: datetime=None):
+def read_tra(tcofn: Path, tReq: datetime = None) -> xarray.DataArray:
     """
     reads binary "transcar_output" file
     many more quantities exist in the binary file, these are the ones we use so far.
@@ -64,7 +61,7 @@ def read_tra(tcofn: Path, tReq: datetime=None):
     return iono
 
 
-def loopread(tcofn: Path, hd: dict, tReq: datetime=None):
+def loopread(tcofn: Path, hd: dict, tReq: datetime = None) -> xarray.DataArray:
     tcoutput = Path(tcofn).expanduser()
     n_t = tcoutput.stat().st_size // hd['size_record'] // d_bytes
 
@@ -117,7 +114,7 @@ def data_tra(f, hd: dict) -> xarray.Dataset:
 
 
 # %% read iono
-def readmsis(ifn: Path, ofn: Path=None, dz=None, newaltmethod: str=None):
+def readmsis(ifn: Path, ofn: Path = None, dz=None, newaltmethod: str = None):
     """reads MSIS model output that Transcar uses"""
 
     nhead = headbytes // d_bytes
@@ -147,7 +144,7 @@ def getaltgrid(ifn: Path) -> xarray.DataArray:
     return msis.alt_km
 
 
-def interpdat(md: xarray.DataArray, dz, raw: np.ndarray, newaltmethod: str=None) -> tuple:
+def interpdat(md: xarray.DataArray, dz, raw: np.ndarray, newaltmethod: str = None) -> tuple:
     """interpolate data to new altitude grid"""
 # %% was interpolation requested?
     if dz is None or newaltmethod is None:
@@ -207,7 +204,7 @@ def interpdat(md: xarray.DataArray, dz, raw: np.ndarray, newaltmethod: str=None)
     return iono, rawint
 
 
-def writeinterpunformat(nx: int, rawi, hdraw, ofn: Path=None):
+def writeinterpunformat(nx: int, rawi, hdraw, ofn: Path = None):
     """write altitude-interpolated data to proprietary Transcar binary format"""
 
     if ofn is None:
@@ -377,18 +374,12 @@ def calcVERtc(kinfn: Path, datadir: Path, beamEnergy: float,
 
 
 def picktime(tTC, tReq):
-    # tReq = np.datetime64(tReq)
-    if isinstance(tTC[0], np.datetime64):
-        tReq = np.datetime64(tReq)
-        tTC = tTC.astype(np.datetime64)
-    elif isinstance(tTC[0], datetime):
-        if isinstance(tReq, str):
-            tReq = parse(tReq)
 
     if tReq is None:
         tReqInd = slice(None)
     else:
-        tReqInd = find_nearest(tTC, tReq)[0]
+        tReq = np.datetime64(tReq)
+        tReqInd = abs(tTC - tReq).argmin()
 
     tUsed = tTC[tReqInd]
 
@@ -613,7 +604,7 @@ def getHeader(line):
 
 
 def parseheadtime(h):
-    return datetime.strptime(str(int(h[0])), '%Y%j') + relativedelta(seconds=float(h[1]))
+    return datetime.strptime(str(int(h[0])), '%Y%j') + timedelta(seconds=float(h[1]))
 
 
 def readTranscarInput(infn):
@@ -661,14 +652,10 @@ def readTranscarInput(infn):
         hd['precipendsec'] = float(f.readline().split()[0])
 
         # derived parameters not in datcar file
-        hd['tstartSim'] = hd['dayofsim'] + \
-            relativedelta(seconds=hd['simstartUTCsec'])
+        hd['tstartSim'] = hd['dayofsim'] + timedelta(seconds=hd['simstartUTCsec'])
         # TODO verify this isn't added to start
-        hd['tendSim'] = hd['dayofsim'] + \
-            relativedelta(seconds=hd['simlengthsec'])
-        hd['tstartPrecip'] = hd['dayofsim'] + \
-            relativedelta(seconds=hd['precipstartsec'])
-        hd['tendPrecip'] = hd['dayofsim'] + \
-            relativedelta(seconds=hd['precipendsec'])
+        hd['tendSim'] = hd['dayofsim'] + timedelta(seconds=hd['simlengthsec'])
+        hd['tstartPrecip'] = hd['dayofsim'] + timedelta(seconds=hd['precipstartsec'])
+        hd['tendPrecip'] = hd['dayofsim'] + timedelta(seconds=hd['precipendsec'])
 
     return hd
