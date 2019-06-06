@@ -2,11 +2,14 @@ from datetime import datetime
 from pathlib import Path
 import xarray
 import logging
+import numpy as np
 from matplotlib.pyplot import figure
 from matplotlib.dates import DateFormatter, MinuteLocator, SecondLocator
 from matplotlib.colors import LogNorm
 #
 from . import ISRPARAM
+
+sfmt = None
 
 
 def timelbl(time, ax, tctime):
@@ -26,51 +29,59 @@ def timelbl(time, ax, tctime):
 
 
 def plotisr(iono: xarray.Dataset, infile: Path, tctime: dict,
-            cmap: str = None, sfmt=None, verbose: bool = False):
+            cmap: str = None, verbose: bool = False):
     """Plot Transcar ISR parameters"""
-    t = iono.time
-    if t.size < 2:  # need at least 2 times for pcolormesh
+    time = iono.time.values.astype('datetime64[us]').astype(datetime)
+    if time.size < 2:  # need at least 2 times for pcolormesh
         logging.error('unable to plot with less than 2 time steps')
         return
 
-    alt = iono.alt_km
+    alt = iono.alt_km.values
 # %% ISR plasma parameters
     for p, cn in zip(ISRPARAM, (LogNorm(), None, None, None)):
-        _plot1d(iono['pp'].loc[:, p], alt, p, sfmt, infile, tctime)
-        fg = figure()
-        ax = fg.gca()
-        pcm = ax.pcolormesh(alt, t, iono['pp'].loc[:, p], cmap=cmap, norm=cn)
-        _tplot(t, tctime, fg, ax, pcm, sfmt, p, infile)
+        _plot1d(iono['pp'].loc[..., p], alt, p, infile, tctime)
+        if time.size > 5:
+            fg = figure()
+            ax = fg.gca()
+            pcm = ax.pcolormesh(alt, time, iono['pp'].loc[..., p],
+                                cmap=cmap, norm=cn)
+            _tplot(time, tctime, fg, ax, pcm, p, infile)
 # %% ionosphere state parameters
-    if verbose > 0:
+    if verbose:
         for ind in ('n1', 'n2', 'n3', 'n4', 'n5', 'n6'):
             fg = figure()
             ax = fg.gca()
-            pcm = ax.pcolormesh(t, alt, iono[ind].values, cmap=cmap, norm=LogNorm(),
+            pcm = ax.pcolormesh(time, alt, iono[ind].values, cmap=cmap, norm=LogNorm(),
                                 vmin=0.1, vmax=1e12)
-            _tplot(t, tctime, fg, ax, pcm, sfmt, str(ind), infile)
+            _tplot(time, tctime, fg, ax, pcm, str(ind), infile)
 
 
-def _tplot(t, tctime, fg, ax, pcm, sfmt, ttxt, infile):
+def _tplot(t, tctime: dict, fg, ax, pcm, ttxt: str, infile: Path):
     ax.autoscale(True, tight=True)
     ax.set_xlabel('time [UTC]')
     ax.set_ylabel('altitude [km]')
-    ax.set_title(ttxt + '\n ' + infile)
+    ax.set_title(f'{ttxt}\n{infile}')
     fg.colorbar(pcm, format=sfmt)
     timelbl(t, ax, tctime)
     ax.xaxis.set_major_formatter(DateFormatter('%H:%M:%S'))
     ax.tick_params(axis='both', which='both', direction='out', labelsize=12)
 
 
-def _plot1d(y, z, name, sfmt, infile, tctime):
+def _plot1d(y: np.ndarray, z: np.ndarray,
+            name: str, infile: Path,
+            tctime: dict):
     if y.ndim == 2:  # all times, so pick last time
         y = y[-1, :]
+    elif y.ndim == 1:
+        pass
+    else:
+        raise ValueError(f'this is for 1-D plots, not ndim={y.ndim}')
 
     ax = figure().gca()
-    ax.plot(y, z.values)
+    ax.plot(y, z)
     ax.set_xlabel(name)
     ax.set_ylabel('altitude')
-    ax.set_title(name+'\n'+infile)
+    ax.set_title(f'{name}\n{infile}')
     ax.grid(True)
     # ax.yaxis.set_major_formatter(sfmt)
     # timelbl(t,ax,tctime)

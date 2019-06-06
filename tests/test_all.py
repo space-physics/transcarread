@@ -1,9 +1,4 @@
 #!/usr/bin/env python
-"""
-examples:
-./test_readtra.py tests/data/beam52/dir.output/transcar_output
-
-"""
 from pathlib import Path
 import numpy as np
 import pytest
@@ -11,13 +6,13 @@ from pytest import approx
 import transcarread as tr
 #
 tdir = Path(__file__).parent
-infn = tdir / 'data/beam52/dir.input/90kmmaxpt123.dat'
+infn = tdir / 'data/beam52.7/dir.input/90kmmaxpt123.dat'
 
 
 def test_readtra():
     # %% get sim parameters
     ifn = infn.parents[1] / 'dir.input/DATCAR'
-    tcofn = tdir / 'data/beam52/dir.output/transcar_output'
+    tcofn = tdir / 'data/beam52.7'
     tReq = '2013-03-31T09:00:21'
     H = tr.readTranscarInput(ifn)
 # %% load transcar output
@@ -30,11 +25,10 @@ def test_readtra():
 
 
 def test_readtranscar():
-    e0 = 52.
+    e0 = 52.7
     tReq = '2013-03-31T09:00:21'
     sim = tr.SimpleSim('bg3', tdir/f'data/beam{e0}/dir.output')
-    rates = tr.calcVERtc('dir.output/emissions.dat',
-                         tdir/'data', e0, tReq, sim)
+    rates = tr.calcVERtc(tdir/'data', e0, tReq, sim)
 # %%
     assert rates.loc[..., 'no1d'][0, 53] == approx(15638.62)
     assert rates.time.values == np.datetime64('2013-03-31T09:00:42')

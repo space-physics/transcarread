@@ -1,7 +1,8 @@
 #!/usr/bin/env python
-""" test readexcrates.py
+"""
+read excitation rates and plot
 
-python transcar2excitationrates.py tests/data/beam52
+    python transcar2excitationrates.py tests/data/beam52
 """
 from pathlib import Path
 from matplotlib.pyplot import show
