@@ -1,7 +1,6 @@
 from datetime import datetime
 from pathlib import Path
 import xarray
-import logging
 import numpy as np
 from matplotlib.pyplot import figure
 from matplotlib.dates import DateFormatter, MinuteLocator, SecondLocator
@@ -31,10 +30,7 @@ def timelbl(time, ax, tctime):
 def plotisr(iono: xarray.Dataset, infile: Path, tctime: dict,
             cmap: str = None, verbose: bool = False):
     """Plot Transcar ISR parameters"""
-    time = iono.time.values.astype('datetime64[us]').astype(datetime)
-    if time.size < 2:  # need at least 2 times for pcolormesh
-        logging.error('unable to plot with less than 2 time steps')
-        return
+    time = iono.time.values.astype('datetime64[us]')
 
     alt = iono.alt_km.values
 # %% ISR plasma parameters
