@@ -267,7 +267,6 @@ def readinitconddat(hd: dict, fn: Path) -> Tuple[xarray.DataArray, np.ndarray]:
 
 # %% read transcar
 def calcVERtc(datadir: Path,
-              beamEnergy: float,
               tReq: Union[None, datetime], sim):
     '''
     calcVERtc is the function called by "hist-feasibility" to get Transcar modeled VER/flux
@@ -295,8 +294,7 @@ def calcVERtc(datadir: Path,
     yielding Peigen, a ver eigenprofile p(z,E) for that particular energy
     '''
 # %% get beam directory
-    beamdir = Path(datadir) / f'beam{beamEnergy:.1f}'
-    logging.debug(beamEnergy)
+    beamdir = Path(datadir)
 # %% read simulation parameters
     tctime = readTranscarInput(beamdir/'dir.input'/sim.transcarconfig)
     if tctime is None:
@@ -313,7 +311,7 @@ def calcVERtc(datadir: Path,
                 f'falling back to using the end simulation time: {tReq}')
     except TypeError as e:
         tReq = None
-        logging.error(f'problem with requested time : {tReq} beam{beamEnergy}  {e}')
+        logging.error(f'problem with requested time : {tReq}  {e}')
 # %% convert transcar output
     rates = ExcitationRates(beamdir / KINFN)
 
