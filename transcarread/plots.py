@@ -23,8 +23,9 @@ def timelbl(time, ax, tctime):
     # ax.axvline(tTC[tReqInd], color='white', linestyle='--',label='Req. Time')
     ax.axvline(tctime['tstartPrecip'], color='red',
                linestyle='--', label='Precip. Start')
-    ax.axvline(tctime['tendPrecip'], color='red',
-               linestyle='--', label='Precip. End')
+    if (tctime['tendPrecip'] >= time[0]) & (tctime['tendPrecip'] <= time[-1]):
+        ax.axvline(tctime['tendPrecip'], color='red',
+                   linestyle='--', label='Precip. End')
 
 
 def plotisr(iono: xarray.Dataset, infile: Path, tctime: dict,
@@ -39,7 +40,7 @@ def plotisr(iono: xarray.Dataset, infile: Path, tctime: dict,
         if time.size > 5:
             fg = figure()
             ax = fg.gca()
-            pcm = ax.pcolormesh(alt, time, iono['pp'].loc[..., p],
+            pcm = ax.pcolormesh(time, alt, iono['pp'].loc[..., p].values.T,
                                 cmap=cmap, norm=cn)
             _tplot(time, tctime, fg, ax, pcm, p, infile)
 # %% ionosphere state parameters
@@ -53,14 +54,14 @@ def plotisr(iono: xarray.Dataset, infile: Path, tctime: dict,
 
 
 def _tplot(t, tctime: dict, fg, ax, pcm, ttxt: str, infile: Path):
-    ax.autoscale(True, tight=True)
+    # ax.autoscale(True, tight=True)
     ax.set_xlabel('time [UTC]')
     ax.set_ylabel('altitude [km]')
     ax.set_title(f'{ttxt}\n{infile}')
     fg.colorbar(pcm, format=sfmt)
     timelbl(t, ax, tctime)
-    ax.xaxis.set_major_formatter(DateFormatter('%H:%M:%S'))
-    ax.tick_params(axis='both', which='both', direction='out', labelsize=12)
+    # ax.xaxis.set_major_formatter(DateFormatter('%H:%M:%S'))
+    # ax.tick_params(axis='both', which='both', direction='out', labelsize=12)
 
 
 def _plot1d(y: np.ndarray, z: np.ndarray,
