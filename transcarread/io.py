@@ -34,17 +34,32 @@ def parseionoheader(h: np.ndarray) -> Dict[str, Any]:
     # ... and so on with asserts. Just checking we aren't reading the totally wrong type of file
     # not a Series because all have to be same datatype
     # not a Dataframe because it's only 1-D
-    hd = {'nx': h[0].astype(int), 'ncol': h[1].astype(int),
-          'intpas': h[8], 'longeo': h[9], 'latgeo': h[10], 'lonmag': h[11], 'latmag': h[12],
-          'tmag': h[13], 'f1072': h[14], 'f1073': h[15], 'ap2': h[16], 'ikp': h[17],
-          'dTinf': h[18], 'dUinf': h[19], 'cofo': h[20], 'cofh': h[21], 'cofn': h[22],
-          'chi': h[23], 'approx': h[36]}
+    hd = {
+        "nx": h[0].astype(int),
+        "ncol": h[1].astype(int),
+        "intpas": h[8],
+        "longeo": h[9],
+        "latgeo": h[10],
+        "lonmag": h[11],
+        "latmag": h[12],
+        "tmag": h[13],
+        "f1072": h[14],
+        "f1073": h[15],
+        "ap2": h[16],
+        "ikp": h[17],
+        "dTinf": h[18],
+        "dUinf": h[19],
+        "cofo": h[20],
+        "cofh": h[21],
+        "cofn": h[22],
+        "chi": h[23],
+        "approx": h[36],
+    }
 
     # h[37] last non-zero value till h[59], then zeros till start of data at byte 504
     # h[59] has value of 1.0
 
-    hd['htime'] = datetime(year=h[2], month=h[3], day=h[4],
-                           hour=h[5], minute=h[6], second=h[7])
+    hd["htime"] = datetime(year=h[2], month=h[3], day=h[4], hour=h[5], minute=h[6], second=h[7])
 
     return hd
 
@@ -56,61 +71,61 @@ def readionoheader(tcofn: Path, nhead: int) -> Tuple[Dict[str, Any], np.ndarray]
     if tcofn.is_dir():  # need this on windows
         raise IsADirectoryError(tcofn)
 
-    with tcofn.open('rb') as f:
+    with tcofn.open("rb") as f:
         h = np.fromfile(f, np.float32, nhead)
 
     return parseionoheader(h), h
 
 
 def readTranscarInput(infn: Path) -> Dict[str, Any]:
-    '''
+    """
     The transcar input file is indexed by line number --this is what the Fortran
       #  code of transcar does, and it's what we do here as well.
-    '''
+    """
     infn = Path(infn).expanduser()
     hd: Dict[str, Any] = {}
 
-    with infn.open('r') as f:
-        hd['kiappel'] = int(f.readline().split()[0])
-        hd['precfile'] = f.readline().split()[0]
-        hd['dtsim'] = float(f.readline().split()[0])  # "dto"
-        hd['dtfluid'] = float(f.readline().split()[0])  # "sortie"
-        hd['iyd_ini'] = int(f.readline().split()[0])
-        hd['dayofsim'] = datetime.strptime(str(hd['iyd_ini']), '%Y%j')
-        hd['simstartUTCsec'] = float(f.readline().split()[0])  # "tempsini"
-        hd['simlengthsec'] = float(f.readline().split()[0])  # "tempslim"
-        hd['jpreci'] = int(f.readline().split()[0])
+    with infn.open("r") as f:
+        hd["kiappel"] = int(f.readline().split()[0])
+        hd["precfile"] = f.readline().split()[0]
+        hd["dtsim"] = float(f.readline().split()[0])  # "dto"
+        hd["dtfluid"] = float(f.readline().split()[0])  # "sortie"
+        hd["iyd_ini"] = int(f.readline().split()[0])
+        hd["dayofsim"] = datetime.strptime(str(hd["iyd_ini"]), "%Y%j")
+        hd["simstartUTCsec"] = float(f.readline().split()[0])  # "tempsini"
+        hd["simlengthsec"] = float(f.readline().split()[0])  # "tempslim"
+        hd["jpreci"] = int(f.readline().split()[0])
         # transconvec calls the next two latgeo_ini, longeo_ini
-        hd['latgeo_ini'], hd['longeo_ini'] = [float(a) for a in f.readline().split(None)[0].split(',')]
+        hd["latgeo_ini"], hd["longeo_ini"] = [float(a) for a in f.readline().split(None)[0].split(",")]
         # from transconvec, time before precip
-        hd['tempsconv_1'] = float(f.readline().split()[0])
+        hd["tempsconv_1"] = float(f.readline().split()[0])
         # from transconvec, time after precip
-        hd['tempsconv'] = float(f.readline().split()[0])
-        hd['step'] = float(f.readline().split()[0])
+        hd["tempsconv"] = float(f.readline().split()[0])
+        hd["step"] = float(f.readline().split()[0])
         # transconvec calls this "postinto"
-        hd['dtkinetic'] = float(f.readline().split()[0])
-        hd['vparaB'] = float(f.readline().split()[0])
-        hd['f107ind'] = float(f.readline().split()[0])
-        hd['f107avg'] = float(f.readline().split()[0])
-        hd['apind'] = float(f.readline().split()[0])
-        hd['convecEfieldmVm'] = float(f.readline().split()[0])
-        hd['cofo'] = float(f.readline().split()[0])
-        hd['cofn2'] = float(f.readline().split()[0])
-        hd['cofo2'] = float(f.readline().split()[0])
-        hd['cofn'] = float(f.readline().split()[0])
-        hd['cofh'] = float(f.readline().split()[0])
-        hd['etopflux'] = float(f.readline().split()[0])
-        hd['precinfn'] = f.readline().split()[0]
-        hd['precint'] = int(f.readline().split()[0])
-        hd['precext'] = int(f.readline().split()[0])
-        hd['precipstartsec'] = float(f.readline().split()[0])
-        hd['precipendsec'] = float(f.readline().split()[0])
+        hd["dtkinetic"] = float(f.readline().split()[0])
+        hd["vparaB"] = float(f.readline().split()[0])
+        hd["f107ind"] = float(f.readline().split()[0])
+        hd["f107avg"] = float(f.readline().split()[0])
+        hd["apind"] = float(f.readline().split()[0])
+        hd["convecEfieldmVm"] = float(f.readline().split()[0])
+        hd["cofo"] = float(f.readline().split()[0])
+        hd["cofn2"] = float(f.readline().split()[0])
+        hd["cofo2"] = float(f.readline().split()[0])
+        hd["cofn"] = float(f.readline().split()[0])
+        hd["cofh"] = float(f.readline().split()[0])
+        hd["etopflux"] = float(f.readline().split()[0])
+        hd["precinfn"] = f.readline().split()[0]
+        hd["precint"] = int(f.readline().split()[0])
+        hd["precext"] = int(f.readline().split()[0])
+        hd["precipstartsec"] = float(f.readline().split()[0])
+        hd["precipendsec"] = float(f.readline().split()[0])
 
         # derived parameters not in datcar file
-        hd['tstartSim'] = hd['dayofsim'] + timedelta(seconds=hd['simstartUTCsec'])
+        hd["tstartSim"] = hd["dayofsim"] + timedelta(seconds=hd["simstartUTCsec"])
         # TODO verify this isn't added to start
-        hd['tendSim'] = hd['dayofsim'] + timedelta(seconds=hd['simlengthsec'])
-        hd['tstartPrecip'] = hd['dayofsim'] + timedelta(seconds=hd['precipstartsec'])
-        hd['tendPrecip'] = hd['dayofsim'] + timedelta(seconds=hd['precipendsec'])
+        hd["tendSim"] = hd["dayofsim"] + timedelta(seconds=hd["simlengthsec"])
+        hd["tstartPrecip"] = hd["dayofsim"] + timedelta(seconds=hd["precipstartsec"])
+        hd["tendPrecip"] = hd["dayofsim"] + timedelta(seconds=hd["precipendsec"])
 
     return hd
