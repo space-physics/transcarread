@@ -34,7 +34,7 @@ def main():
 
         if figure is not None:
             ax = figure().gca()
-            ax.semilogx(rates[0, :, :], rates.alt_km)
+            ax.semilogx(rates[:, :], rates.alt_km)
             ax.set_ylabel("altitude [km]")
             ax.set_xlabel("excitation")
             ax.set_title(d.name)
