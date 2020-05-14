@@ -20,12 +20,12 @@ def main():
     p.add_argument("path", help="path where dir.output/emissions.dat is")
     p = p.parse_args()
 
-    path = Path(p.path).expanduser()
+    path = Path(p.path).expanduser().resolve()
 
     if path.stem.startswith("beam"):  # specific beam
         dlist = [path]
     else:  # overall simulation
-        dlist = [d for d in path.iterdir() if d.is_dir()]
+        dlist = (d for d in path.iterdir() if d.is_dir())
 
     for d in dlist:
         rates = ExcitationRates(d / p.emisfn)

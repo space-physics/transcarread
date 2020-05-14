@@ -16,10 +16,9 @@ pip install -e .
 
 ## Usage
 
-* transcar2aurora.py: Generate simulated auroral emissions based on
-    Transcar excitation rates.
-* transcar2isr.py: Generate simulated Incoherent Scatter Radar plasma
-    paremters based on Transcar sim.
-* transcar2excitationradar.py: plots excitation rates output by
-    Transcar sim.
+These scripts plot Transcar simulation results
+
+* optimal_emission.py: Generate simulated auroral emissions based on Transcar excitation rates.
+* plasma_state.py: Plot simulated Incoherent Scatter Radar plasma paremters from Transcar sim. These plots are over the time range of the simulation (seconds, hours, etc.)
+* excitation_rates.py: plots excitation rates output by Transcar sim.
 * PlotTranscarInput.py: plots interpolated transcar inputs (MSIS90).

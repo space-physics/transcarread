@@ -19,12 +19,13 @@ def main():
     p = ArgumentParser(description="Makes auroral emissions based on transcar sim")
     p.add_argument("path", help="root path that beam directories live in")
     p.add_argument("-t", "--treq", help="date/time  YYYY-MM-DDTHH-MM-SS", default="2013-03-31T09:00:30")
-    p.add_argument("--filter", help="optical filter choices: bg3   none", default="bg3")
+    p.add_argument("--filter", help="optical filter choices: bg3")
     p.add_argument("--tcopath", help="set path from which to read transcar output files", default="dir.output")
     p = p.parse_args()
 
     rodir = Path(p.path).expanduser().resolve()
-
+    if not rodir.is_dir():
+        raise FileNotFoundError(rodir)
     dirs = (d for d in rodir.glob('beam*') if d.is_dir())
     for d in dirs:
         sim = tr.SimpleSim(p.filter, p.tcopath, transcarutc=p.treq)
@@ -36,7 +37,7 @@ def main():
             ax = figure().gca()
             ax.semilogx(rates[:, :], rates.alt_km)
             ax.set_ylabel("altitude [km]")
-            ax.set_xlabel("excitation")
+            ax.set_xlabel("VER")
             ax.set_title(d.name)
 
     show()

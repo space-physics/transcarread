@@ -16,7 +16,7 @@ import transcarread as tr
 
 
 def compute(path: Path, tReq: datetime, verbose: bool):
-    path = Path(path).expanduser()
+    path = Path(path).expanduser().resolve()
     # %% get sim parameters
     datfn = path / "dir.input/DATCAR"
     tctime = tr.readTranscarInput(datfn)
