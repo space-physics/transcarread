@@ -15,7 +15,7 @@ import transcarread.plots as plots
 import transcarread as tr
 
 
-def compute(path: Path, tReq: datetime, verbose: bool):
+def compute(path: Path, tReq: datetime, plot_params: list, verbose: bool):
     path = Path(path).expanduser().resolve()
     # %% get sim parameters
     datfn = path / "dir.input/DATCAR"
@@ -23,7 +23,7 @@ def compute(path: Path, tReq: datetime, verbose: bool):
     # %% load transcar output
     iono = tr.read_tra(path, tReq)
     # %% do plot
-    plots.plot_isr(iono, path, tctime, verbose)
+    plots.plot_isr(iono, path, tctime, plot_params, verbose)
 
     return iono, tctime
 
@@ -33,9 +33,10 @@ def main():
     p.add_argument("path", help="path containing dir.output/transcar_output file")
     p.add_argument("--tReq", help="time to extract data at")
     p.add_argument("-v", "--verbose", help="more plots", action="store_true")
+    p.add_argument("-p", "--params", help="only plot these parama", choices=["ne", "vi", "Ti", "Te"], nargs="+")
     p = p.parse_args()
 
-    compute(p.path, p.tReq, p.verbose)
+    compute(p.path, p.tReq, p.params, p.verbose)
 
     show()
 

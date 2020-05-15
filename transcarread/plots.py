@@ -21,21 +21,25 @@ def timelbl(time, ax, tctime):
         ax.xaxis.set_minor_locator(MinuteLocator(interval=2))
 
     # ax.axvline(tTC[tReqInd], color='white', linestyle='--',label='Req. Time')
-    ax.axvline(tctime["tstartPrecip"], color="red", linestyle="--", label="Precip. Start")
+    if (tctime["tstartPrecip"] >= time[0]) & (tctime["tstartPrecip"] <= time[-1]):
+        ax.axvline(tctime["tstartPrecip"], color="red", linestyle="--", label="Precip. Start")
     if (tctime["tendPrecip"] >= time[0]) & (tctime["tendPrecip"] <= time[-1]):
         ax.axvline(tctime["tendPrecip"], color="red", linestyle="--", label="Precip. End")
 
 
-def plot_isr(iono: xarray.Dataset, infile: Path, tctime: dict, verbose: bool = False):
+def plot_isr(iono: xarray.Dataset, infile: Path, tctime: dict, plot_params: list, verbose: bool = False):
     """Plot Transcar ISR parameters"""
     time = iono.time.values.astype("datetime64[us]")
 
     alt = iono.alt_km.values
     # %% ISR plasma parameters
     for p in ISRPARAM:
+        if plot_params and p not in plot_params:
+            continue
+
         dat = iono["pp"].loc[..., p]
 
-        _plot1d(dat, alt, p, infile, tctime)
+        _plot1d(dat, alt, p, infile, tctime, time[-1])
 
         if p == "ne":
             cn = LogNorm()
@@ -74,7 +78,7 @@ def _tplot(t, tctime: dict, fg, ax, pcm, ttxt: str, infile: Path):
     # ax.tick_params(axis='both', which='both', direction='out', labelsize=12)
 
 
-def _plot1d(y: np.ndarray, z: np.ndarray, name: str, infile: Path, tctime: dict):
+def _plot1d(y: np.ndarray, z: np.ndarray, name: str, infile: Path, tctime: dict, time):
     if y.ndim == 2:  # all times, so pick last time
         y = y[-1, :]
     elif y.ndim == 1:
@@ -86,7 +90,7 @@ def _plot1d(y: np.ndarray, z: np.ndarray, name: str, infile: Path, tctime: dict)
     ax.plot(y, z)
     ax.set_xlabel(name)
     ax.set_ylabel("altitude")
-    ax.set_title(f"{name}\n{infile}")
+    ax.set_title(f"{name} {time}\n{infile}")
     ax.grid(True)
     # ax.yaxis.set_major_formatter(sfmt)
     # timelbl(t,ax,tctime)
