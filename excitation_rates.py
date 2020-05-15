@@ -11,8 +11,9 @@ read excitation rates and plot
 from pathlib import Path
 from matplotlib.pyplot import show
 from argparse import ArgumentParser
+
 from transcarread import ExcitationRates
-from transcarread.plots import plotExcrates
+from transcarread.plots import plot_excitation_rates
 
 
 def main():
@@ -35,7 +36,7 @@ def main():
     for d in dirs:
         rates = ExcitationRates(d / p.emisfn)
         rates.name = d.name[4:]
-        plotExcrates(rates)
+        plot_excitation_rates(rates)
 
     show()
 

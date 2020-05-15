@@ -155,7 +155,7 @@ def plotisrparam(pp: xarray.DataArray, zlim: tuple = None):
     fg.subplots_adjust(wspace=0.075)  # brings subplots horizontally closer
 
 
-def plotExcrates(rates: xarray.DataArray, tReq: datetime = None):
+def plot_excitation_rates(rates: xarray.DataArray, tReq: datetime = None):
     if rates.ndim == 3 and isinstance(tReq, datetime):
         rates = rates.loc[tReq, ...]
     elif rates.ndim == 3:
@@ -174,4 +174,13 @@ def plotExcrates(rates: xarray.DataArray, tReq: datetime = None):
     ax.set_ylabel("altitude [km]")
     ax.set_title(f"excitation rates: {rates.name} eV")
     ax.legend(rates.reaction.values)
+    ax.grid(True)
+
+
+def plot_precinput(prec: np.ndarray, name: str):
+    ax = figure().gca()
+    ax.loglog(prec[:, 0], prec[:, 1], marker="*")
+    ax.set_xlabel("energy bin [eV]")
+    ax.set_ylabel("differential number flux")
+    ax.set_title(f"particle precipitation {name}")
     ax.grid(True)

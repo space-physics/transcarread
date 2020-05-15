@@ -51,6 +51,26 @@ PARAM = [
 KINFN = "dir.output/emissions.dat"
 
 
+def read_precinput(path: Path) -> np.ndarray:
+    """
+    read precipitation input
+
+    Parameters
+    ----------
+
+    path : pathlib.Path
+        fullpath to precinput.dat
+
+    Returns
+    -------
+
+    phi: numpy.ndarray
+        vector of differential number flux
+    """
+
+    return np.loadtxt(path, delimiter=" ", skiprows=1, max_rows=34)
+
+
 def read_tra(path: Path, tReq: datetime = None) -> xarray.DataArray:
     """
     reads binary "transcar_output" file
@@ -59,9 +79,8 @@ def read_tra(path: Path, tReq: datetime = None) -> xarray.DataArray:
 
     examples: test_readtra.py
 
-    Michael Hirsch
-
-    inputs:
+    Parameters
+    ----------
     tcofn: path/filename of transcar_output file
     tReq: optional, datetime at which to extract data from file (will still read whole file first)
 
