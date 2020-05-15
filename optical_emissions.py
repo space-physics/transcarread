@@ -26,7 +26,7 @@ def main():
     rodir = Path(p.path).expanduser().resolve()
     if not rodir.is_dir():
         raise FileNotFoundError(rodir)
-    dirs = (d for d in rodir.glob('beam*') if d.is_dir())
+    dirs = (d for d in rodir.glob("beam*") if d.is_dir())
     for d in dirs:
         sim = tr.SimpleSim(p.filter, p.tcopath, transcarutc=p.treq)
         # %% run sim
