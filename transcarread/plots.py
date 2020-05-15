@@ -6,7 +6,6 @@ from matplotlib.pyplot import figure
 from matplotlib.dates import MinuteLocator, SecondLocator
 from matplotlib.colors import LogNorm
 
-#
 from . import ISRPARAM
 
 sfmt = None
@@ -27,18 +26,33 @@ def timelbl(time, ax, tctime):
         ax.axvline(tctime["tendPrecip"], color="red", linestyle="--", label="Precip. End")
 
 
-def plotisr(iono: xarray.Dataset, infile: Path, tctime: dict, cmap: str = None, verbose: bool = False):
+def plot_isr(iono: xarray.Dataset, infile: Path, tctime: dict, verbose: bool = False):
     """Plot Transcar ISR parameters"""
     time = iono.time.values.astype("datetime64[us]")
 
     alt = iono.alt_km.values
     # %% ISR plasma parameters
-    for p, cn in zip(ISRPARAM, (LogNorm(), None, None, None)):
-        _plot1d(iono["pp"].loc[..., p], alt, p, infile, tctime)
+    for p in ISRPARAM:
+        dat = iono["pp"].loc[..., p]
+
+        _plot1d(dat, alt, p, infile, tctime)
+
+        if p == "ne":
+            cn = LogNorm()
+        else:
+            cn = None
+        if p == "vi":
+            vmax = abs(dat).max()
+            vmin = -vmax
+            cmap = "bwr"
+        else:
+            cmap = "cubehelix"
+            vmin = vmax = None
+
         if time.size > 5:
             fg = figure()
             ax = fg.gca()
-            pcm = ax.pcolormesh(time, alt, iono["pp"].loc[..., p].values.T, cmap=cmap, norm=cn)
+            pcm = ax.pcolormesh(time, alt, dat.values.T, cmap=cmap, norm=cn, vmin=vmin, vmax=vmax)
             _tplot(time, tctime, fg, ax, pcm, p, infile)
     # %% ionosphere state parameters
     if verbose:

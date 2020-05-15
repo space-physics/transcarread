@@ -9,10 +9,7 @@ from argparse import ArgumentParser
 from dateutil.parser import parse
 import transcarread as tr
 
-try:
-    from matplotlib.pyplot import figure, show
-except ImportError:
-    figure = None
+from matplotlib.pyplot import figure, show
 
 
 def main():
@@ -26,19 +23,20 @@ def main():
     rodir = Path(p.path).expanduser().resolve()
     if not rodir.is_dir():
         raise FileNotFoundError(rodir)
-    dirs = (d for d in rodir.glob("beam*") if d.is_dir())
+
+    dirs = sorted(d for d in rodir.glob("beam*") if d.is_dir())
+    if not dirs:
+        raise FileNotFoundError(f"no beams found in {rodir}")
     for d in dirs:
         sim = tr.SimpleSim(p.filter, p.tcopath, transcarutc=p.treq)
         # %% run sim
         rates = tr.calcVERtc(d, parse(p.treq), sim.transcarconfig)
-        print(rates)
 
-        if figure is not None:
-            ax = figure().gca()
-            ax.semilogx(rates[:, :], rates.alt_km)
-            ax.set_ylabel("altitude [km]")
-            ax.set_xlabel("VER")
-            ax.set_title(d.name)
+        ax = figure().gca()
+        ax.semilogx(rates[:, :], rates.alt_km)
+        ax.set_ylabel("altitude [km]")
+        ax.set_xlabel("VER")
+        ax.set_title(d.name)
 
     show()
 

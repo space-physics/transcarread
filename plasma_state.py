@@ -23,7 +23,7 @@ def compute(path: Path, tReq: datetime, verbose: bool):
     # %% load transcar output
     iono = tr.read_tra(path, tReq)
     # %% do plot
-    plots.plotisr(iono, path, tctime, "cubehelix", verbose)
+    plots.plot_isr(iono, path, tctime, verbose)
 
     return iono, tctime
 
@@ -35,7 +35,7 @@ def main():
     p.add_argument("-v", "--verbose", help="more plots", action="store_true")
     p = p.parse_args()
 
-    iono, tctime = compute(p.path, p.tReq, p.verbose)
+    compute(p.path, p.tReq, p.verbose)
 
     show()
 

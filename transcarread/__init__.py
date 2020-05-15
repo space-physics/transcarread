@@ -131,7 +131,7 @@ def data_tra(f: IO[Any], hd: dict) -> xarray.DataArray:
     """
     pp = compplasmaparam(iono, head["approx"])
     # %% output
-    iono = xarray.Dataset({"iono": iono, "pp": pp}, coords={"time": head["htime"]}, attrs={"chi": head["chi"], })
+    iono = xarray.Dataset({"iono": iono, "pp": pp}, coords={"time": head["htime"]}, attrs={"chi": head["chi"]})
 
     return iono
 
