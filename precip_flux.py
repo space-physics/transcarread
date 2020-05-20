@@ -20,8 +20,8 @@ from transcarread.plots import plot_precinput
 
 def main():
     p = ArgumentParser(description="Read Transcar precipitation differential number flux")
-    p.add_argument("--fn", help="precinput.dat filename", default="dir.input/precinput.dat")
-    p.add_argument("path", help="dir.input/precinput.dat is under")
+    p.add_argument("--fn", help="precinput filename", default="dir.input/precinput.asc")
+    p.add_argument("path", help="dir.input/precinput is under")
     p = p.parse_args()
 
     path = Path(p.path).expanduser().resolve()

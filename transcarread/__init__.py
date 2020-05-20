@@ -59,7 +59,7 @@ def read_precinput(path: Path) -> np.ndarray:
     ----------
 
     path : pathlib.Path
-        fullpath to precinput.dat
+        fullpath to precinput file
 
     Returns
     -------
